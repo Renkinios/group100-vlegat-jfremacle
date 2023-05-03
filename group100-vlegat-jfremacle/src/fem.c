@@ -13,14 +13,12 @@ femGeo theGeometry;
 
 femGeo *geoGetGeometry()                        { return &theGeometry; }
 
-double geoSizeDefault(double x, double y)       { return theGeometry.h; }
 
 double geoGmshSize(int dim, int tag, double x, double y, double z, double lc, void *data)
                                                 { return theGeometry.geoSize(x,y);    }
 void geoInitialize() 
 {
     int ierr;
-    theGeometry.geoSize = geoSizeDefault;
     gmshInitialize(0,NULL,1,0,&ierr);                         ErrorGmsh(ierr);
     gmshModelAdd("MyGeometry",&ierr);                         ErrorGmsh(ierr);
     gmshModelMeshSetSizeCallback(geoGmshSize,NULL,&ierr);     ErrorGmsh(ierr);
@@ -263,18 +261,18 @@ void geoMeshRead(const char *filename)
    FILE* file = fopen(filename,"r");
    
    int trash, *elem;
-   
    femNodes *theNodes = malloc(sizeof(femNodes));
    theGeometry.theNodes = theNodes;
    ErrorScan(fscanf(file, "Number of nodes %d \n", &theNodes->nNodes));
    theNodes->X = malloc(sizeof(double)*(theNodes->nNodes));
    theNodes->Y = malloc(sizeof(double)*(theNodes->nNodes));
-   theNodes -> number[theNodes->nNodes] ; 
+   theNodes -> number = malloc(sizeof(double)*(theNodes->nNodes)); 
    for (int i = 0; i < theNodes->nNodes; i++) {
        ErrorScan(fscanf(file,"%d : %le %le \n",&trash,&theNodes->X[i],&theNodes->Y[i]));} 
-    for (size_t i = 0; i < theNodes ->nNodes; i++)
-        theNodes -> number[i] = i ;
     
+   for (size_t i = 0; i < theNodes ->nNodes; i++)
+        theNodes -> number[i] = i ;
+
    femMesh *theEdges = malloc(sizeof(femMesh));
    theGeometry.theEdges = theEdges;
    theEdges->nLocalNode = 2;
@@ -320,7 +318,7 @@ void geoMeshRead(const char *filename)
       for (int i=0; i < theDomain->nElem; i++){
           ErrorScan(fscanf(file,"%6d",&theDomain->elem[i]));
           if ((i+1) != theDomain->nElem  && (i+1) % 10 == 0) ErrorScan(fscanf(file,"\n")); }}
-    
+   ;
    fclose(file);
 }
 

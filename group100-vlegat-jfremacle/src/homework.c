@@ -12,42 +12,6 @@ int compare(const void *nodeOne, const void *nodeTwo)
     return  0;  
 }
 
-
-
-void geoMeshGenerate() {
-
-    femGeo* theGeometry = geoGetGeometry();
-
-    double w = theGeometry->LxPlate;
-    double h = theGeometry->LyPlate;
-    
-    int ierr;
-    double r = w/4;
-    int idRect = gmshModelOccAddRectangle(0.0,0.0,0.0,w,h,-1,0.0,&ierr); 
-    int idDisk = gmshModelOccAddDisk(w/2.0,h/2.0,0.0,r,r,-1,NULL,0,NULL,0,&ierr); 
-    int idSlit = gmshModelOccAddRectangle(w/2.0,h/2.0-r,0.0,w,2.0*r,-1,0.0,&ierr); 
-    int rect[] = {2,idRect};
-    int disk[] = {2,idDisk};
-    int slit[] = {2,idSlit};
-
-    gmshModelOccCut(rect,2,disk,2,NULL,NULL,NULL,NULL,NULL,-1,1,1,&ierr); 
-    gmshModelOccCut(rect,2,slit,2,NULL,NULL,NULL,NULL,NULL,-1,1,1,&ierr); 
-    gmshModelOccSynchronize(&ierr); 
-
-    if (theGeometry->elementType == FEM_QUAD) {
-        gmshOptionSetNumber("Mesh.SaveAll",1,&ierr);
-        gmshOptionSetNumber("Mesh.RecombineAll",1,&ierr);
-        gmshOptionSetNumber("Mesh.Algorithm",8,&ierr);  
-        gmshOptionSetNumber("Mesh.RecombinationAlgorithm",1.0,&ierr); 
-        gmshModelGeoMeshSetRecombine(2,1,45,&ierr);  
-        gmshModelMeshGenerate(2,&ierr);  }
-  
-    if (theGeometry->elementType == FEM_TRIANGLE) {
-        gmshOptionSetNumber("Mesh.SaveAll",1,&ierr);
-        gmshModelMeshGenerate(2,&ierr);  }
- 
-    return;
-}
 void femMeshRenumber(femMesh *theMesh, femRenumType renumType)
 {
     int i, *inverse;
@@ -79,6 +43,7 @@ void femMeshRenumber(femMesh *theMesh, femRenumType renumType)
             break;
         default : Error("Unexpected renumbering option"); }
 }
+
 
 double *femElasticitySolve(femProblem *theProblem)
 {

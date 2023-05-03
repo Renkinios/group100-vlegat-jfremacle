@@ -53,8 +53,6 @@ typedef struct {
 } femDomain;
 
 typedef struct {
-    double LxPlate, LyPlate;
-    double h;
     femElementType elementType;
     double (*geoSize)(double x, double y);
     femNodes *theNodes;
