@@ -1,12 +1,17 @@
 #include "fem.h"
 
-double *X_or_Y ; 
-int compare_node(const void *a,const void *b ){
-    int node_a = *((int*)a) ; 
-    int node_b = *((int*)b) ;
-    return X_or_Y[node_b] - X_or_Y[node_a] ;  
+double *theGlobalCoord;
 
+int compare(const void *nodeOne, const void *nodeTwo) 
+{
+    int *iOne = (int *)nodeOne;
+    int *iTwo = (int *)nodeTwo;
+    double diff = theGlobalCoord[*iOne] - theGlobalCoord[*iTwo];
+    if (diff < 0)    return  1;
+    if (diff > 0)    return -1;
+    return  0;  
 }
+
 
 
 void geoMeshGenerate() {
@@ -49,27 +54,27 @@ void femMeshRenumber(femMesh *theMesh, femRenumType renumType)
     femNodes *nodes = theMesh->nodes;
     switch (renumType) {
         case FEM_NO :
-            for (i = 0; i < nodes->nNode; i++) 
+            for (i = 0; i < nodes->nNodes; i++) 
                 nodes->number[i] = i;
             break;
         case FEM_XNUM : 
-            inverse = malloc(sizeof(int)*nodes->nNode);
-            for (i = 0; i < nodes->nNode; i++) 
+            inverse = malloc(sizeof(int)*nodes->nNodes);
+            for (i = 0; i < nodes->nNodes; i++) 
                 inverse[i] = i; 
             theGlobalCoord = nodes->X;
-            qsort(inverse, nodes->nNode, sizeof(int), compare);
-            for (i = 0; i < nodes->nNode; i++)
+            qsort(inverse, nodes->nNodes, sizeof(int), compare);
+            for (i = 0; i < nodes->nNodes; i++)
                 nodes->number[inverse[i]] = i;
             free(inverse);  
             break;
         case FEM_YNUM : 
-            inverse = malloc(sizeof(int)*nodes->nNode);
-            for (i = 0; i < nodes->nNode; i++) 
+            inverse = malloc(sizeof(int)*nodes->nNodes);
+            for (i = 0; i < nodes->nNodes; i++) 
                 inverse[i] = i; 
-            theGlobalCoord = theMesh->Y;
-            qsort(inverse, nodes->nNode, sizeof(int), compare);
-            for (i = 0; i < nodes->nNode; i++)
-                theMesh->number[inverse[i]] = i;
+            theGlobalCoord = nodes->Y;
+            qsort(inverse, nodes->nNodes, sizeof(int), compare);
+            for (i = 0; i < nodes->nNodes; i++)
+                nodes->number[inverse[i]] = i;
             free(inverse);  
             break;
         default : Error("Unexpected renumbering option"); }
