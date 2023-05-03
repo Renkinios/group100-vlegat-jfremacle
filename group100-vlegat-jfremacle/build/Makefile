@@ -202,6 +202,30 @@ src/glfem.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\myFem.dir\build.make CMakeFiles/myFem.dir/src/glfem.c.s
 .PHONY : src/glfem.c.s
 
+src/homework.obj: src/homework.c.obj
+.PHONY : src/homework.obj
+
+# target to build an object file
+src/homework.c.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\myFem.dir\build.make CMakeFiles/myFem.dir/src/homework.c.obj
+.PHONY : src/homework.c.obj
+
+src/homework.i: src/homework.c.i
+.PHONY : src/homework.i
+
+# target to preprocess a source file
+src/homework.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\myFem.dir\build.make CMakeFiles/myFem.dir/src/homework.c.i
+.PHONY : src/homework.c.i
+
+src/homework.s: src/homework.c.s
+.PHONY : src/homework.s
+
+# target to generate assembly for a file
+src/homework.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\myFem.dir\build.make CMakeFiles/myFem.dir/src/homework.c.s
+.PHONY : src/homework.c.s
+
 src/main.obj: src/main.c.obj
 .PHONY : src/main.obj
 
@@ -243,6 +267,9 @@ help:
 	@echo ... src/glfem.obj
 	@echo ... src/glfem.i
 	@echo ... src/glfem.s
+	@echo ... src/homework.obj
+	@echo ... src/homework.i
+	@echo ... src/homework.s
 	@echo ... src/main.obj
 	@echo ... src/main.i
 	@echo ... src/main.s
