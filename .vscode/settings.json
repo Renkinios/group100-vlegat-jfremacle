@@ -1,0 +1,10 @@
+{
+    "cmake.configureOnOpen": true,
+    "files.associations": {
+        "fem.h": "c",
+        "stdlib.h": "c",
+        "gmshc.h": "c",
+        "glfem.h": "c",
+        "glfw3.h": "c"
+    }
+}
