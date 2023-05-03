@@ -1,7 +1,7 @@
 /*
  *  main.c
  *  Library for EPL1110 : Finite Elements for dummies
- *  Utilisation de l'API de GMSH pour créer un maillage
+ *  Utilisation de l'API de GMSH pour crï¿½er un maillage
  *
  *  Copyright (C) 2023 UCL-IMMC : Vincent Legat
  *  All rights reserved.
@@ -48,13 +48,12 @@ int main(void)
    
     geoMeshGenerate();
     geoMeshImport();
-    
-    geoSetDomainName(0,"Outer Disk");
-    geoSetDomainName(1,"Bottom");
-    geoSetDomainName(2,"Left");
-    geoSetDomainName(3,"Right");
-    geoSetDomainName(4,"Top");
-    geoSetDomainName(5,"Inner Disk");
+    // geoSetDomainName(0,"Outer Disk");
+    // geoSetDomainName(1,"Bottom");
+    // geoSetDomainName(2,"Left");
+    // geoSetDomainName(3,"Right");
+    // geoSetDomainName(4,"Top");
+    // geoSetDomainName(5,"Inner Disk");
     
 
 //
@@ -65,8 +64,10 @@ int main(void)
     geoMeshWrite(filename);
 
 //
-//  -3- Champ de la taille de référence du maillage
+//  -3- Champ de la taille de rï¿½fï¿½rence du maillage
 //
+
+
 
     double *meshSizeField = malloc(theGeometry->theNodes->nNodes*sizeof(double));
     femNodes *theNodes = theGeometry->theNodes;
