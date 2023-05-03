@@ -43,57 +43,57 @@ void geoMeshGenerate() {
  
     return;
 }
-// void femMeshRenumber(femMesh *theMesh, femRenumType renumType)
-// {
-//     int i, *inverse;
-//     femNodes *nodes = theMesh->nodes;
-//     switch (renumType) {
-//         case FEM_NO :
-//             for (i = 0; i < nodes->nNode; i++) 
-//                 nodes->number[i] = i;
-//             break;
-//         case FEM_XNUM : 
-//             inverse = malloc(sizeof(int)*nodes->nNode);
-//             for (i = 0; i < nodes->nNode; i++) 
-//                 inverse[i] = i; 
-//             theGlobalCoord = nodes->X;
-//             qsort(inverse, nodes->nNode, sizeof(int), compare);
-//             for (i = 0; i < nodes->nNode; i++)
-//                 nodes->number[inverse[i]] = i;
-//             free(inverse);  
-//             break;
-//         case FEM_YNUM : 
-//             inverse = malloc(sizeof(int)*nodes->nNode);
-//             for (i = 0; i < nodes->nNode; i++) 
-//                 inverse[i] = i; 
-//             theGlobalCoord = theMesh->Y;
-//             qsort(inverse, nodes->nNode, sizeof(int), compare);
-//             for (i = 0; i < nodes->nNode; i++)
-//                 theMesh->number[inverse[i]] = i;
-//             free(inverse);  
-//             break;
-//         default : Error("Unexpected renumbering option"); }
-// }
-//     int node[nodes->nNodes] ; 
-//     for (size_t i = 0; i < nodes->nNodes; i++)
-//         node[i] = i ; 
-//     switch (renumType) {
-//         case FEM_NO :
-//             break;
-//         case FEM_XNUM : 
-//             X_or_Y = nodes ->X ;  
-//             qsort(node,nodes->nNodes,sizeof(int),compare_node) ; 
-//             break;
-//         case FEM_YNUM : 
-//             X_or_Y = nodes->Y ;  
-//             qsort(node,nodes->nNodes,sizeof(int),compare_node) ;  // regarde ou sont les plus grand_noeud pour après pouvoir les remplacé 
-//             break;            
+void femMeshRenumber(femMesh *theMesh, femRenumType renumType)
+{
+    int i, *inverse;
+    femNodes *nodes = theMesh->nodes;
+    switch (renumType) {
+        case FEM_NO :
+            for (i = 0; i < nodes->nNode; i++) 
+                nodes->number[i] = i;
+            break;
+        case FEM_XNUM : 
+            inverse = malloc(sizeof(int)*nodes->nNode);
+            for (i = 0; i < nodes->nNode; i++) 
+                inverse[i] = i; 
+            theGlobalCoord = nodes->X;
+            qsort(inverse, nodes->nNode, sizeof(int), compare);
+            for (i = 0; i < nodes->nNode; i++)
+                nodes->number[inverse[i]] = i;
+            free(inverse);  
+            break;
+        case FEM_YNUM : 
+            inverse = malloc(sizeof(int)*nodes->nNode);
+            for (i = 0; i < nodes->nNode; i++) 
+                inverse[i] = i; 
+            theGlobalCoord = theMesh->Y;
+            qsort(inverse, nodes->nNode, sizeof(int), compare);
+            for (i = 0; i < nodes->nNode; i++)
+                theMesh->number[inverse[i]] = i;
+            free(inverse);  
+            break;
+        default : Error("Unexpected renumbering option"); }
+}
+    int node[nodes->nNodes] ; 
+    for (size_t i = 0; i < nodes->nNodes; i++)
+        node[i] = i ; 
+    switch (renumType) {
+        case FEM_NO :
+            break;
+        case FEM_XNUM : 
+            X_or_Y = nodes ->X ;  
+            qsort(node,nodes->nNodes,sizeof(int),compare_node) ; 
+            break;
+        case FEM_YNUM : 
+            X_or_Y = nodes->Y ;  
+            qsort(node,nodes->nNodes,sizeof(int),compare_node) ;  // regarde ou sont les plus grand_noeud pour après pouvoir les remplacé 
+            break;            
 
-//         default : Error("Unexpected renumbering option"); 
-//         }
-//     for (size_t i = 0; i < nodes->nNodes; i++)
-//         nodes -> number[node[i]] = i ; // remplace par les premier noeud  
-// }
+        default : Error("Unexpected renumbering option"); 
+        }
+    for (size_t i = 0; i < nodes->nNodes; i++)
+        nodes -> number[node[i]] = i ; // remplace par les premier noeud  
+}
 
 double *femElasticitySolve(femProblem *theProblem)
 {
