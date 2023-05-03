@@ -79,26 +79,6 @@ void femMeshRenumber(femMesh *theMesh, femRenumType renumType)
             break;
         default : Error("Unexpected renumbering option"); }
 }
-    int node[nodes->nNodes] ; 
-    for (size_t i = 0; i < nodes->nNodes; i++)
-        node[i] = i ; 
-    switch (renumType) {
-        case FEM_NO :
-            break;
-        case FEM_XNUM : 
-            X_or_Y = nodes ->X ;  
-            qsort(node,nodes->nNodes,sizeof(int),compare_node) ; 
-            break;
-        case FEM_YNUM : 
-            X_or_Y = nodes->Y ;  
-            qsort(node,nodes->nNodes,sizeof(int),compare_node) ;  // regarde ou sont les plus grand_noeud pour après pouvoir les remplacé 
-            break;            
-
-        default : Error("Unexpected renumbering option"); 
-        }
-    for (size_t i = 0; i < nodes->nNodes; i++)
-        nodes -> number[node[i]] = i ; // remplace par les premier noeud  
-}
 
 double *femElasticitySolve(femProblem *theProblem)
 {

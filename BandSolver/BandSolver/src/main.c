@@ -30,7 +30,7 @@ int main(void)
     // ("..\\data\\triangles101.txt") 
     //
     // Sorry for the inconvenience :-)
-    // On réfléchit pour rendre cela plus transparent dans les homeworks suivants :-)
+    // On rï¿½flï¿½chit pour rendre cela plus transparent dans les homeworks suivants :-)
     // Be patient !
 
     

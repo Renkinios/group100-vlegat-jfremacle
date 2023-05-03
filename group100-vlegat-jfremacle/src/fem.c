@@ -272,10 +272,8 @@ void geoMeshRead(const char *filename)
    theNodes -> number[theNodes->nNodes] ; 
    for (int i = 0; i < theNodes->nNodes; i++) {
        ErrorScan(fscanf(file,"%d : %le %le \n",&trash,&theNodes->X[i],&theNodes->Y[i]));} 
-    for (size_t i = 0; i < theNodes; i++)
-    {
+    for (size_t i = 0; i < theNodes ->nNodes; i++)
         theNodes -> number[i] = i ;
-    }
     
    femMesh *theEdges = malloc(sizeof(femMesh));
    theGeometry.theEdges = theEdges;
