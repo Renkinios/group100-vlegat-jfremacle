@@ -5,6 +5,18 @@
         "stdlib.h": "c",
         "gmshc.h": "c",
         "glfem.h": "c",
-        "glfw3.h": "c"
+        "glfw3.h": "c",
+        "math.h": "c",
+        "bit": "c",
+        "compare": "c",
+        "cstddef": "c",
+        "string": "c",
+        "optional": "c",
+        "limits": "c",
+        "memory": "c",
+        "new": "c",
+        "ranges": "c",
+        "functional": "c",
+        "random": "c"
     }
 }

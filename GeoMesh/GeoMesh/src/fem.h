@@ -25,7 +25,6 @@
 #define FALSE 0 
 #define TRUE  1
 #define MAXNAME 256
-
 typedef struct {
     int nNodes;
     double *X;

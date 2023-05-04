@@ -8,7 +8,7 @@
  */
 
 #include "fem.h"
-
+#include <math.h>
 femGeo theGeometry;
 
 femGeo *geoGetGeometry()                        { return &theGeometry; }

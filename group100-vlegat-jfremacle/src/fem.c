@@ -486,12 +486,13 @@ void femDiscretePrint(femDiscrete *mySpace)
 
 
 
-femFullSystem *femFullSystemCreate(int size)
-{
+femFullSystem *femFullSystemCreate(int size,femSolverType type)
+{   
+    
     femFullSystem *theSystem = malloc(sizeof(femFullSystem));
     femFullSystemAlloc(theSystem, size);
     femFullSystemInit(theSystem);
-
+    theSystem->type = type; 
     return theSystem; 
 }
 
@@ -592,7 +593,7 @@ void  femFullSystemConstrain(femFullSystem *mySystem,
 }
 
 
-femProblem *femElasticityCreate(femGeo* theGeometry,char const *filename)
+femProblem *femElasticityCreate(femGeo* theGeometry,char const *filename,femSolverType type)
 {
     femProblem *theProblem = malloc(sizeof(femProblem));
     char iCase[100]; 
@@ -639,7 +640,7 @@ femProblem *femElasticityCreate(femGeo* theGeometry,char const *filename)
     if (theGeometry->theElements->nLocalNode == 4) {
         theProblem->space    = femDiscreteCreate(4,FEM_QUAD);
         theProblem->rule     = femIntegrationCreate(4,FEM_QUAD); }
-    theProblem->system   = femFullSystemCreate(size); 
+    theProblem->system   = femFullSystemCreate(size,type); 
     return theProblem;
 }
 

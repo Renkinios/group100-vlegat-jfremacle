@@ -29,6 +29,7 @@
 typedef enum {FEM_TRIANGLE,FEM_QUAD} femElementType;
 typedef enum {DIRICHLET_X,DIRICHLET_Y} femBoundaryType;
 typedef enum {PLANAR_STRESS,PLANAR_STRAIN,AXISYM} femElasticCase;
+typedef enum {FEM_FULL,FEM_BAND,FEM_ITER,FEM_Cholesky} femSolverType;
 
 
 typedef struct {
@@ -81,6 +82,7 @@ typedef struct {
     double *B;
     double **A;
     int size;
+    femSolverType type ; 
 } femFullSystem;
 
 
@@ -120,7 +122,7 @@ int                 geoGetDomain(char *name);
 void                geoFinalize();
 
 femProblem*         femElasticityCreate(femGeo* theGeometry, 
-                                      double E, double nu, double rho, double g, femElasticCase iCase);
+                                      double E, double nu, double rho, double g, femElasticCase iCase, femSolverType Type);
 void                femElasticityFree(femProblem *theProblem);
 void                femElasticityPrint(femProblem *theProblem);
 void                femElasticityAddBoundaryCondition(femProblem *theProblem, char *nameDomain, femBoundaryType type, double value);
@@ -136,7 +138,7 @@ void                femDiscreteXsi2(femDiscrete* mySpace, double *xsi, double *e
 void                femDiscretePhi2(femDiscrete* mySpace, double xsi, double eta, double *phi);
 void                femDiscreteDphi2(femDiscrete* mySpace, double xsi, double eta, double *dphidxsi, double *dphideta);
 
-femFullSystem*      femFullSystemCreate(int size);
+femFullSystem*      femFullSystemCreate(int size,femSolverType type);
 void                femFullSystemFree(femFullSystem* mySystem);
 void                femFullSystemPrint(femFullSystem* mySystem);
 void                femFullSystemInit(femFullSystem* mySystem);
