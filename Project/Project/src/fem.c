@@ -631,7 +631,7 @@ femProblem* femElasticityRead(femGeo* theGeometry, const char *filename)
     double typeCondition;
 
     while (feof(file) != TRUE) {
-        ErrorScan(fscanf(file,"%19[^\n]s \n",(char *)&theLine));
+        ErrorScan(fscanf(file,"%19[^\r\n]s \r\n",(char *)&theLine));
         if (strncasecmp(theLine,"Type of problem     ",19) == 0) {
             ErrorScan(fscanf(file,":  %[^\n]s \n",(char *)&theArgument));
             if (strncasecmp(theArgument,"Planar stresses",13) == 0)
@@ -659,7 +659,7 @@ femProblem* femElasticityRead(femGeo* theGeometry, const char *filename)
             if (strncasecmp(theArgument,"Neumann-Y",19) == 0)
                 typeCondition = NEUMANN_Y;                
             femElasticityAddBoundaryCondition(theProblem,theDomain,typeCondition,value); }
-        ErrorScan(fscanf(file,"\n")); }
+        ErrorScan(fscanf(file,"\r\n")); }
  
     int iCase = theProblem->planarStrainStress;
     double E = theProblem->E;

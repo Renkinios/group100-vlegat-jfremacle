@@ -151,11 +151,14 @@ double *femElasticitySolve(femProblem *theProblem)
                                             dphidx[i] * c * dphidx[j]) * jac * weight; }}
              for (i = 0; i < theSpace->n; i++) {
                 B[mapY[i]] -= phi[i] * g * rho * jac * weight; }}} 
-    int *theConstrainedNodes = theProblem->constrainedNodes;     
+    int *theConstrainedNodes = theProblem->constrainedNodes; 
+
     for (int i=0; i < theSystem->size; i++) {
         if (theConstrainedNodes[i] != -1) {
             double value = theProblem->conditions[theConstrainedNodes[i]]->value;
-            femFullSystemConstrain(theSystem,i,value); }
+            printf("Constrained node %d to value %f\n",i,value);
+            femFullSystemConstrain(theSystem,i,value); 
+            }
             }
     double *sol ;
     double **L ;

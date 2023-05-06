@@ -666,7 +666,7 @@ void femElasticityAddBoundaryCondition(femProblem *theProblem, char *nameDomain,
     int nElem = theBoundary->domain->nElem;
     for (int e=0; e<nElem; e++) {
         for (int i=0; i<2; i++) {
-            int node = theBoundary->domain->mesh->elem[2*elem[e]+i];
+            int node = theBoundary->domain->mesh->elem[2*elem[e]+i]; // paire ou impaire
             theProblem->constrainedNodes[2*node+shift] = size-1; }}    
 }
 
