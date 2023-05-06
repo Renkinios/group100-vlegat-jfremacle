@@ -50,17 +50,17 @@ void geoMeshGenerate() {
 
     femGeo* theGeometry = geoGetGeometry();
 
-    double w = theGeometry->LxPlate;
-    double h = theGeometry->LyPlate;
+    // double w = theGeometry->LxPlate;
+    // double h = theGeometry->LyPlate;
      
-    double x0 = theGeometry->xNotch;
-    double y0 = theGeometry->yNotch;
-    double r0 = theGeometry->rNotch;
+    // double x0 = theGeometry->xNotch;
+    // double y0 = theGeometry->yNotch;
+    // double r0 = theGeometry->rNotch;
     
     
-    double x1 = theGeometry->xHole;
-    double y1 = theGeometry->yHole;
-    double r1 = theGeometry->rHole;
+    // double x1 = theGeometry->xHole;
+    // double y1 = theGeometry->yHole;
+    // double r1 = theGeometry->rHole;
  
 //
 //  -1- Construction de la g�om�trie avec OpenCascade
@@ -68,19 +68,44 @@ void geoMeshGenerate() {
 //      On cr�e les deux cercles
 //      On soustrait les cercles du rectangle :-)
 //
+    double e = 0.04;
+    double h = 20 ; 
+    double r = 2 ;
  
     int ierr;
-    int idNotch = gmshModelOccAddDisk(x0, y0, 0,r0, r0 ,-1 ,NULL,0,NULL,0,&ierr); 
+    int idNotch = gmshModelOccAddDisk(0, h/2, 0, r,r ,-1 ,NULL,0,NULL,0,&ierr); // petit cercle
     ErrorGmsh(ierr);
-    int idHole  =   gmshModelOccAddDisk(x0, y0, 0, r0+0.1, r0+0.1, -1,NULL,0,NULL,0,&ierr); 
+    int idHole  =   gmshModelOccAddDisk(0, h/2, 0, r+e, r+e, -1,NULL,0,NULL,0,&ierr); // grand cercle
     ErrorGmsh(ierr);
-    
-    int plate[] = {2,};
-    int notch[] = {2,idNotch};
+    int drectangle_down = gmshModelOccAddRectangle(-(r+e),-((h/2)+r+e),0,r+e,r+h/2+e,-1,0.0,&ierr) ; 
+    int drectangle_up = gmshModelOccAddRectangle(-(r+e),0,0,r+e,r+h/2+e,-1,0.0,&ierr) ;
+    int drectangle_right_up = gmshModelOccAddRectangle(0,0,0,r+e,h/2,-1,0.0,&ierr) ;
+    int drectangle_right_down = gmshModelOccAddRectangle(0,-(h/2),0,r+e,h/2,-1,0.0,&ierr) ;
+    int idNotch_d = gmshModelOccAddDisk(0, -h/2, 0, r,r ,-1 ,NULL,0,NULL,0,&ierr);
+    int idHole_d = gmshModelOccAddDisk(0, -h/2, 0, r+e,r+e ,-1 ,NULL,0,NULL,0,&ierr);
+    int drectangle_center = gmshModelOccAddRectangle(r,-h/2,0,e,h,-1,0.0,&ierr) ;  
+
+    // ErrorGmsh(ierr);
+    int rect_down[] = {2,drectangle_down}; 
+    int rect_up[] = {2,drectangle_up};
+    int notch[] = {2,idNotch};  
     int hole[]  = {2,idHole};
+    int notch_d[] = {2,idNotch_d};
+    int hole_d[]  = {2,idHole_d};
+    int rect_right_up[] = {2,drectangle_right_up};
+    int rect_right_down[] = {2,drectangle_right_down};
+    int rect_center[] = {2,drectangle_center};
 
     gmshModelOccCut(hole,2,notch,2,NULL,NULL,NULL,NULL,NULL,-1,1,1,&ierr);
-    ErrorGmsh(ierr);
+    gmshModelOccCut(hole,2,rect_up,2,NULL,NULL,NULL,NULL,NULL,-1,1,1,&ierr);
+    gmshModelOccCut(hole_d,2,notch_d,2,NULL,NULL,NULL,NULL,NULL,-1,1,1,&ierr);
+    gmshModelOccCut(hole_d,2,rect_down,2,NULL,NULL,NULL,NULL,NULL,-1,1,1,&ierr);
+    gmshModelOccCut(hole,2,rect_right_up,2,NULL,NULL,NULL,NULL,NULL,-1,1,1,&ierr);
+    gmshModelOccCut(hole_d,2,rect_right_down,2,NULL,NULL,NULL,NULL,NULL,-1,1,1,&ierr);
+    // gmshModelOccCut(hole,2,rect_right,2,NULL,NULL,NULL,NULL,NULL,-1,1,1,&ierr);
+    // gmshModelOccCut(rect_little,2,rect_remove,2,NULL,NULL,NULL,NULL,NULL,-1,1,1,&ierr);
+    // gmshModelOccFuse(rect_little,2,hole,2,NULL,NULL,NULL,NULL,NULL,-1,1,1,&ierr);
+    
  
 //
 //  -2- D�finition de la fonction callback pour la taille de r�f�rence
