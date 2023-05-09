@@ -88,7 +88,6 @@ double *solvecholesky(double **L, double *b, int n) {
 }
 double *femElasticitySolve(femProblem *theProblem)
 {
-
     femFullSystem  *theSystem = theProblem->system;
     femIntegration *theRule = theProblem->rule;
     femDiscrete    *theSpace = theProblem->space;
@@ -109,6 +108,7 @@ double *femElasticitySolve(femProblem *theProblem)
     double g   = theProblem->g;
     double **A = theSystem->A;
     double *B  = theSystem->B;
+    
     
     for (iElem = 0; iElem < theMesh->nElem; iElem++) {
         for (j=0; j < nLocal; j++) {
@@ -135,31 +135,53 @@ double *femElasticitySolve(femProblem *theProblem)
                 dydxsi += y[i]*dphidxsi[i];   
                 dydeta += y[i]*dphideta[i]; }
             double jac = fabs(dxdxsi * dydeta - dxdeta * dydxsi);
-            
+            // x like r y like z
             for (i = 0; i < theSpace->n; i++) {    
                 dphidx[i] = (dphidxsi[i] * dydeta - dphideta[i] * dydxsi) / jac;       
-                dphidy[i] = (dphideta[i] * dxdxsi - dphidxsi[i] * dxdeta) / jac; }           
-            for (i = 0; i < theSpace->n; i++) { 
-                for(j = 0; j < theSpace->n; j++) {
-                    A[mapX[i]][mapX[j]] += (dphidx[i] * a * dphidx[j] + 
-                                            dphidy[i] * c * dphidy[j]) * jac * weight;                                                                                            
-                    A[mapX[i]][mapY[j]] += (dphidx[i] * b * dphidy[j] + 
-                                            dphidy[i] * c * dphidx[j]) * jac * weight;                                                                                           
-                    A[mapY[i]][mapX[j]] += (dphidy[i] * b * dphidx[j] + 
-                                            dphidx[i] * c * dphidy[j]) * jac * weight;                                                                                            
-                    A[mapY[i]][mapY[j]] += (dphidy[i] * a * dphidy[j] + 
-                                            dphidx[i] * c * dphidx[j]) * jac * weight; }}
+                dphidy[i] = (dphideta[i] * dxdxsi - dphidxsi[i] * dxdeta) / jac; } 
+                for (i = 0; i < theSpace->n; i++) { 
+                    for(j = 0; j < theSpace->n; j++) {
+                        if(theProblem->planarStrainStress == PLANAR_STRESS || theProblem->planarStrainStress == PLANAR_STRAIN){
+                            A[mapX[i]][mapX[j]] += (dphidx[i] * a * dphidx[j] + 
+                                                    dphidy[i] * c * dphidy[j]) * jac * weight;                                                                                            
+                            A[mapX[i]][mapY[j]] += (dphidx[i] * b * dphidy[j] + 
+                                                    dphidy[i] * c * dphidx[j]) * jac * weight;                                                                                           
+                            A[mapY[i]][mapX[j]] += (dphidy[i] * b * dphidx[j] + 
+                                                    dphidx[i] * c * dphidy[j]) * jac * weight;                                                                                            
+                            A[mapY[i]][mapY[j]] += (dphidy[i] * a * dphidy[j] + 
+                                                    dphidx[i] * c * dphidx[j]) * jac * weight;
+                        }
+                        if(theProblem->planarStrainStress == AXISYM ) {
+                             A[mapX[i]][mapX[j]] += (dphidx[i] * a * dphidx[j] *x[i] + 
+                                                    dphidy[i] * c * dphidy[j] * x[i] + phi[i]*(b*dphidx[j]) + a*phi[j]/x[i]) * jac * weight;                                                                                            
+                            A[mapX[i]][mapY[j]] += (dphidx[i] * b * dphidy[j] *x[i]+ x[i] *
+                                                    dphidy[i] * c * dphidx[j] + phi[i] *b* dphidy[j]) * jac * weight;                                                                                           
+                            A[mapY[i]][mapX[j]] += (dphidy[i] * b * dphidx[j] * x[i]+ 
+                                                    dphidx[i] * c * dphidy[j] * x[i] + dphidy[i] * b * phi[j]) * jac * weight;                                                                                            
+                            A[mapY[i]][mapY[j]] += (dphidy[i] * a * x[i] * dphidy[j] + 
+                                                    dphidx[i] * c * x[i] *dphidx[j]) * jac * weight;
+                        }
+                    }
+                }
+            
+    
              for (i = 0; i < theSpace->n; i++) {
-                B[mapY[i]] -= phi[i] * g * rho * jac * weight; }}} 
+                if(theProblem->planarStrainStress == PLANAR_STRESS || theProblem->planarStrainStress == PLANAR_STRAIN)
+                    B[mapY[i]] -= phi[i] * g * rho * jac * weight; 
+                if(theProblem->planarStrainStress == AXISYM)
+                    B[mapY[i]] -= phi[i] * x[i] * g * rho * jac * weight * x[i];
+
+  
     int *theConstrainedNodes = theProblem->constrainedNodes; 
 
     for (int i=0; i < theSystem->size; i++) {
         if (theConstrainedNodes[i] != -1) {
             double value = theProblem->conditions[theConstrainedNodes[i]]->value;
-            printf("Constrained node %d to value %f\n",i,value);
-            femFullSystemConstrain(theSystem,i,value); 
-            }
-            }
+            femFullSystemConstrain(theSystem,i,value,theProblem->conditions[theConstrainedNodes[i]]->type); 
+           }
+        }
+            
+            
     double *sol ;
     double **L ;
     switch (theProblem->system->type)

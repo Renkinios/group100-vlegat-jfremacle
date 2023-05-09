@@ -147,7 +147,7 @@ void                femFullSystemPrint(femFullSystem* mySystem);
 void                femFullSystemInit(femFullSystem* mySystem);
 void                femFullSystemAlloc(femFullSystem* mySystem, int size);
 double*             femFullSystemEliminate(femFullSystem* mySystem);
-void                femFullSystemConstrain(femFullSystem* mySystem, int myNode, double value);
+void                femFullSystemConstrain(femFullSystem *mySystem, int myNode, double myValue,femBoundaryType myType) ;
 
 double              femMin(double *x, int n);
 double              femMax(double *x, int n);

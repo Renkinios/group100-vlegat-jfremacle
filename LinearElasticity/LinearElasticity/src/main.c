@@ -33,7 +33,7 @@ int main(void)
     geoMeshImport();
     geoSetDomainName(0,"Symmetry");
     geoSetDomainName(7,"Bottom");
-    
+    geoSetDomainName(1,"Top");
         
 //
 //  -2- Creation probleme 
@@ -43,9 +43,10 @@ int main(void)
     double nu  = 0.3;
     double rho = 7.85e3; 
     double g   = 9.81;
-    femProblem* theProblem = femElasticityCreate(theGeometry,E,nu,rho,g,PLANAR_STRAIN,FEM_FULL);
+    femProblem* theProblem = femElasticityCreate(theGeometry,E,nu,rho,g,PLANAR_STRAIN,FEM_Cholesky);
     femElasticityAddBoundaryCondition(theProblem,"Symmetry",DIRICHLET_X,0); 
     femElasticityAddBoundaryCondition(theProblem,"Bottom",DIRICHLET_Y,0);
+    femElasticityAddBoundaryCondition(theProblem,"Top",NEUMANN_Y,9.81);
     femElasticityPrint(theProblem);
     double *theSoluce = femElasticitySolve(theProblem); 
    

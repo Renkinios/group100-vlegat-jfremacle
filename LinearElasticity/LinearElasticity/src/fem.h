@@ -27,7 +27,8 @@
 #define MAXNAME 256
 
 typedef enum {FEM_TRIANGLE,FEM_QUAD} femElementType;
-typedef enum {DIRICHLET_X,DIRICHLET_Y} femBoundaryType;
+typedef enum {DIRICHLET_X,DIRICHLET_Y,DIRICHLET_N,DIRICHLET_T,
+              NEUMANN_X,NEUMANN_Y,NEUMANN_N,NEUMANN_T} femBoundaryType;
 typedef enum {PLANAR_STRESS,PLANAR_STRAIN,AXISYM} femElasticCase;
 typedef enum {FEM_FULL,FEM_BAND,FEM_ITER,FEM_Cholesky} femSolverType;
 
@@ -144,7 +145,7 @@ void                femFullSystemPrint(femFullSystem* mySystem);
 void                femFullSystemInit(femFullSystem* mySystem);
 void                femFullSystemAlloc(femFullSystem* mySystem, int size);
 double*             femFullSystemEliminate(femFullSystem* mySystem);
-void                femFullSystemConstrain(femFullSystem* mySystem, int myNode, double value);
+void                femFullSystemConstrain(femFullSystem* mySystem, int myNode, double value,femBoundaryType myType);
 
 double              femMin(double *x, int n);
 double              femMax(double *x, int n);

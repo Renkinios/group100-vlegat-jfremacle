@@ -449,8 +449,7 @@ double* femFullSystemEliminate(femFullSystem *mySystem)
     return(mySystem->B);    
 }
 
-void  femFullSystemConstrain(femFullSystem *mySystem, 
-                             int myNode, double myValue) 
+void  femFullSystemConstrain(femFullSystem *mySystem, int myNode, double myValue,femBoundaryType myType) 
 {
     double  **A, *B;
     int     i, size;
@@ -458,16 +457,25 @@ void  femFullSystemConstrain(femFullSystem *mySystem,
     A    = mySystem->A;
     B    = mySystem->B;
     size = mySystem->size;
-    
-    for (i=0; i < size; i++) {
+    switch (myType)
+    {
+    case (DIRICHLET_X || DIRICHLET_Y):
+        for (i=0; i < size; i++) {
         B[i] -= myValue * A[i][myNode];
         A[i][myNode] = 0; }
     
-    for (i=0; i < size; i++) 
-        A[myNode][i] = 0; 
+        for (i=0; i < size; i++) 
+            A[myNode][i] = 0; 
+        
+        A[myNode][myNode] = 1;
+        B[myNode] = myValue;
+        break;
     
-    A[myNode][myNode] = 1;
-    B[myNode] = myValue;
+    // case (NEUMANN_X || NEUMANN_Y) : 
+    //     printf("ok") ; 
+    //     break;
+    // 
+    }
 }
 
 
@@ -539,8 +547,8 @@ void femElasticityAddBoundaryCondition(femProblem *theProblem, char *nameDomain,
     
     
     int shift;
-    if (type == DIRICHLET_X)  shift = 0;      
-    if (type == DIRICHLET_Y)  shift = 1;  
+    if (type == DIRICHLET_X || type == NEUMANN_X)  shift = 0;      
+    if (type == DIRICHLET_Y || type == NEUMANN_Y) shift = 1;  
     int *elem = theBoundary->domain->elem;
     int nElem = theBoundary->domain->nElem;
     for (int e=0; e<nElem; e++) {
@@ -630,7 +638,7 @@ femProblem* femElasticityRead(femGeo* theGeometry, const char *filename)
     double value;
     double typeCondition;
 
-    while (feof(file) != TRUE) {
+    while (!feof(file)) {
         ErrorScan(fscanf(file,"%19[^\r\n]s \r\n",(char *)&theLine));
         if (strncasecmp(theLine,"Type of problem     ",19) == 0) {
             ErrorScan(fscanf(file,":  %[^\n]s \n",(char *)&theArgument));

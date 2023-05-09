@@ -58,20 +58,39 @@ double *femElasticitySolve(femProblem *theProblem)
                 dydxsi += y[i]*dphidxsi[i];   
                 dydeta += y[i]*dphideta[i]; }
             double jac = fabs(dxdxsi * dydeta - dxdeta * dydxsi);
-            
+            // x like r y like z
             for (i = 0; i < theSpace->n; i++) {    
                 dphidx[i] = (dphidxsi[i] * dydeta - dphideta[i] * dydxsi) / jac;       
-                dphidy[i] = (dphideta[i] * dxdxsi - dphidxsi[i] * dxdeta) / jac; }            
-            for (i = 0; i < theSpace->n; i++) { 
-                for(j = 0; j < theSpace->n; j++) {
-                    A[mapX[i]][mapX[j]] += (dphidx[i] * a * dphidx[j] + 
-                                            dphidy[i] * c * dphidy[j]) * jac * weight;                                                                                            
-                    A[mapX[i]][mapY[j]] += (dphidx[i] * b * dphidy[j] + 
-                                            dphidy[i] * c * dphidx[j]) * jac * weight;                                                                                           
-                    A[mapY[i]][mapX[j]] += (dphidy[i] * b * dphidx[j] + 
-                                            dphidx[i] * c * dphidy[j]) * jac * weight;                                                                                            
-                    A[mapY[i]][mapY[j]] += (dphidy[i] * a * dphidy[j] + 
-                                            dphidx[i] * c * dphidx[j]) * jac * weight; }}
+                dphidy[i] = (dphideta[i] * dxdxsi - dphidxsi[i] * dxdeta) / jac; }        
+            switch (theProblem->planarStrainStress)
+            {
+            case PLANAR_STRESS || PLANAR_STRAIN: 
+                for (i = 0; i < theSpace->n; i++) { 
+                    for(j = 0; j < theSpace->n; j++) {
+                        A[mapX[i]][mapX[j]] += (dphidx[i] * a * dphidx[j] + 
+                                                dphidy[i] * c * dphidy[j]) * jac * weight;                                                                                            
+                        A[mapX[i]][mapY[j]] += (dphidx[i] * b * dphidy[j] + 
+                                                dphidy[i] * c * dphidx[j]) * jac * weight;                                                                                           
+                        A[mapY[i]][mapX[j]] += (dphidy[i] * b * dphidx[j] + 
+                                                dphidx[i] * c * dphidy[j]) * jac * weight;                                                                                            
+                        A[mapY[i]][mapY[j]] += (dphidy[i] * a * dphidy[j] + 
+                                                dphidx[i] * c * dphidx[j]) * jac * weight; }}
+                break;
+            
+            case AXISYM:
+                for (i = 0; i < theSpace->n; i++) { 
+                    for(j = 0; j < theSpace->n; j++) {
+                        A[mapX[i]][mapX[j]] += (dphidx[i] * a * dphidx[j] + 
+                                                dphidy[i] * c * dphidy[j]) * jac * weight;                                                                                            
+                        A[mapX[i]][mapY[j]] += (dphidx[i] * b * dphidy[j] + 
+                                                dphidy[i] * c * dphidx[j]) * jac * weight;                                                                                           
+                        A[mapY[i]][mapX[j]] += (dphidy[i] * b * dphidx[j] + 
+                                                dphidx[i] * c * dphidy[j]) * jac * weight;                                                                                            
+                        A[mapY[i]][mapY[j]] += (dphidy[i] * a * dphidy[j] + 
+                                                dphidx[i] * c * dphidx[j]) * jac * weight; }}
+                break;
+            }    
+            
              for (i = 0; i < theSpace->n; i++) {
                 B[mapY[i]] -= phi[i] * g * rho * jac * weight; }}} 
   
@@ -79,7 +98,7 @@ double *femElasticitySolve(femProblem *theProblem)
     for (int i=0; i < theSystem->size; i++) {
         if (theConstrainedNodes[i] != -1) {
             double value = theProblem->conditions[theConstrainedNodes[i]]->value;
-            femFullSystemConstrain(theSystem,i,value); }}
+            femFullSystemConstrain(theSystem,i,value,theProblem->conditions[theConstrainedNodes[i]]->type); }}
                             
     return femFullSystemEliminate(theSystem);
 }
