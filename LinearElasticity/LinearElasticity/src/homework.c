@@ -243,17 +243,22 @@ double *femElasticitySolve(femProblem *theProblem)
     int *theConstrainedEdges = theProblem->contrainteEdges; 
     for  (int iEdge=0; iEdge < theEdges->nElem; iEdge++)
     {
+        
         if (theConstrainedEdges[iEdge] != -1) {
+
             double value = theProblem->conditions[theConstrainedEdges[iEdge]]->value;
             int type = theProblem->conditions[theConstrainedEdges[iEdge]]->type;
             double jac,nx,ny;
             for (int iInteg=0;iInteg<2;iInteg++)
             {
+                // printf("okok \n") ; 
+
                 double phi[2] = {(1. - _gaussDos2Eta[iInteg]) / 2., (1. + _gaussDos2Eta[iInteg]) / 2.};
                 int Nmap[2]; 
                 getEdge(theProblem,iEdge,&jac,&nx,&ny,Nmap); 
                 for(int i=0;i<2;i++)
                 {
+                    // printf("okok \n") ;  
                     if (type==NEUMANN_X) B[2*Nmap[i]]+= phi[i]*value*jac*_gaussDos2Weight[iInteg];
                     if (type==NEUMANN_Y) B[2*Nmap[i]+1]+= phi[i]*value*jac*_gaussDos2Weight[iInteg];
                     if (type==NEUMANN_N)

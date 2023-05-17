@@ -671,14 +671,14 @@ void femElasticityAddBoundaryCondition(femProblem *theProblem, char *nameDomain,
     int *elem = theBoundary->domain->elem;
     int nElem = theBoundary->domain->nElem;
 
-
+    printf("nElem %d \n",nElem);
     for (int e=0; e<nElem; e++) {
         for (int i=0; i<2; i++) {
             int node = theBoundary->domain->mesh->elem[2*elem[e]+i];
             theProblem->constrainedNodes[2*node+shift] = size-1; 
         }
         if ((type == NEUMANN_X)|| (type == NEUMANN_Y)||(type == NEUMANN_N)|| (type == NEUMANN_T))
-            theProblem ->contrainteEdges[elem[e]] =  -1 ; 
+            theProblem ->contrainteEdges[elem[e]] =  size-1 ; 
     }
 
 }
@@ -784,4 +784,7 @@ void  getEdge(femProblem *problem,int iEdge,double *jac,double *nx,double *ny,in
     *jac=len/2;
     //printf("xL %f xR %f yL %f yR %f\n",x[0],x[1],y[0],y[1]);
     //printf("dx %f dy %f len %f\n",dx,dy,len); 
+    int*renumber = problem->geometry->theNodes->number;
+    map[0]=renumber[nodeL];
+    map[1]=renumber[nodeR];
 }

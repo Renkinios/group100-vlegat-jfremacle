@@ -50,7 +50,7 @@ int main(void)
     double rho = 7.85e3; 
     double g   = 9.81;
     double m = 7000; 
-    femProblem* theProblem = femElasticityCreate(theGeometry,E,nu,rho,g,PLANAR_STRESS,FEM_FULL,FEM_YNUM);
+    femProblem* theProblem = femElasticityCreate(theGeometry,E,nu,rho,g,PLANAR_STRESS,FEM_FULL,FEM_NO);
     // femElasticityAddBoundaryCondition(theProblem,"Symmetry",DIRICHLET_X,0); 
     // femElasticityAddBoundaryCondition(theProblem,"Bottom",DIRICHLET_Y,0);
     // femElasticityAddBoundaryCondition(theProblem,"Top",NEUMANN_T,300);    
