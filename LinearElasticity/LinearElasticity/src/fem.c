@@ -52,7 +52,6 @@ void geoFinalize()
     gmshFinalize(&ierr); ErrorGmsh(ierr);
 }
 
-
 void geoSetSizeCallback(double (*geoSize)(double x, double y)) 
 {
     theGeometry.geoSize = geoSize; }
@@ -77,6 +76,9 @@ void geoMeshImport()
         theNodes->X[i] = xyz[3*node[i]-3];
         theNodes->Y[i] = xyz[3*node[i]-2]; }
     theGeometry.theNodes = theNodes;
+    theNodes->number = malloc(sizeof(int)*theNodes->nNodes); 
+    for (int i = 0; i < theNodes->nNodes; i++) 
+          theNodes->number[i] = i; 
     gmshFree(node);
     gmshFree(xyz);
     gmshFree(trash);
@@ -347,7 +349,6 @@ static const double _gaussTri3Xsi[3]     = { 0.166666666666667, 0.66666666666666
 static const double _gaussTri3Eta[3]     = { 0.166666666666667, 0.166666666666667, 0.666666666666667};
 static const double _gaussTri3Weight[3]  = { 0.166666666666667, 0.166666666666667, 0.166666666666667};
 
-
 femIntegration *femIntegrationCreate(int n, femElementType type)
 {
     femIntegration *theRule = malloc(sizeof(femIntegration));
@@ -572,20 +573,9 @@ double* femFullSystemEliminate(femFullSystem *mySystem)
 
 void  femFullSystemConstrain(femFullSystem *mySystem, 
                              int myNode, double myValue,femBoundaryType myType) 
-{
-    if(myType == DIRICHLET_X) 
-        printf("Dirichlet boundary condition x=%f \n",myValue);
-    if(myType == DIRICHLET_Y) 
-        printf("Dirichlet boundary condition y=%f \n",myValue);
-    if(myType == NEUMANN_X) 
-        printf("Neumann boundary condition nx=%f \n",myValue);
-    if(myType == NEUMANN_Y)
-        printf("Neumann boundary condition ny=%f \n",myValue);
-    
-    
+{ 
     double  **A, *B;
     int     i, size;
-    
     A    = mySystem->A;
     B    = mySystem ->B;
     size = mySystem->size;
@@ -600,14 +590,11 @@ void  femFullSystemConstrain(femFullSystem *mySystem,
         A[myNode][myNode] = 1;
         B[myNode] = myValue;
     }
-    if(myType == NEUMANN_X || myType == NEUMANN_Y){
-        B[myNode] += myValue;
-    }
 }
 
 
 femProblem *femElasticityCreate(femGeo* theGeometry, 
-                  double E, double nu, double rho, double g, femElasticCase iCase, femSolverType type)
+                  double E, double nu, double rho, double g, femElasticCase iCase, femSolverType type,femRenumType renumType)
 {
     femProblem *theProblem = malloc(sizeof(femProblem));
     theProblem->E   = E;
@@ -629,10 +616,13 @@ femProblem *femElasticityCreate(femGeo* theGeometry,
     theProblem->conditions = NULL;
     
     int size = 2*theGeometry->theNodes->nNodes;
+    int number_Edges= theGeometry->theEdges->nElem;
+    theProblem->contrainteEdges = malloc(number_Edges*sizeof(int)) ; 
     theProblem->constrainedNodes = malloc(size*sizeof(int));
     for (int i=0; i < size; i++) 
         theProblem->constrainedNodes[i] = -1;
-    
+    for(int i=0; i < number_Edges; i++)
+        theProblem->contrainteEdges[i] = -1;
     theProblem->geometry = theGeometry;  
     if (theGeometry->theElements->nLocalNode == 3) {
         theProblem->space    = femDiscreteCreate(3,FEM_TRIANGLE);
@@ -640,7 +630,9 @@ femProblem *femElasticityCreate(femGeo* theGeometry,
     if (theGeometry->theElements->nLocalNode == 4) {
         theProblem->space    = femDiscreteCreate(4,FEM_QUAD);
         theProblem->rule     = femIntegrationCreate(4,FEM_QUAD); }
+    femMeshRenumber(theProblem->geometry->theElements,renumType);
     theProblem->system   = femFullSystemCreate(size,type); 
+
     return theProblem;
 }
 
@@ -674,14 +666,21 @@ void femElasticityAddBoundaryCondition(femProblem *theProblem, char *nameDomain,
     
     
     int shift;
-    if (type == DIRICHLET_X  || type == NEUMANN_X)  shift = 0;      
-    if (type == DIRICHLET_Y || type == NEUMANN_Y) shift = 1;  
+    if (type == DIRICHLET_X )  shift = 0;      
+    if (type == DIRICHLET_Y ) shift = 1;    
     int *elem = theBoundary->domain->elem;
     int nElem = theBoundary->domain->nElem;
+
+
     for (int e=0; e<nElem; e++) {
         for (int i=0; i<2; i++) {
             int node = theBoundary->domain->mesh->elem[2*elem[e]+i];
-            theProblem->constrainedNodes[2*node+shift] = size-1; }}    
+            theProblem->constrainedNodes[2*node+shift] = size-1; 
+        }
+        if ((type == NEUMANN_X)|| (type == NEUMANN_Y)||(type == NEUMANN_N)|| (type == NEUMANN_T))
+            theProblem ->contrainteEdges[elem[e]] =  -1 ; 
+    }
+
 }
 
 void femElasticityPrint(femProblem *theProblem)  
@@ -763,4 +762,26 @@ void femWarning(char *text, int line, char *file)
     printf("\n-------------------------------------------------------------------------------- ");
     printf("\n  Warning in %s at line %d : \n  %s\n", file, line, text);
     printf("--------------------------------------------------------------------- Yek Yek !! \n\n");                                              
+}
+void  getEdge(femProblem *problem,int iEdge,double *jac,double *nx,double *ny,int *map)
+{
+    double x[2],y[2],dx,dy,len;
+
+    int nodeL= problem->geometry->theEdges->elem[iEdge*2];
+    int nodeR= problem->geometry->theEdges->elem[iEdge*2+1];
+    double *X=problem->geometry->theNodes->X;
+    double *Y=problem->geometry->theNodes->Y;
+    x[0]=X[nodeL];
+    x[1]=X[nodeR];
+    y[0]=Y[nodeL];
+    y[1]=Y[nodeR];
+    printf("X[0] = %f, Y[0] = %f, X[1] = %f, Y[1] = %f\n",X[nodeL],Y[nodeL],X[nodeR],Y[nodeR]);
+    dx=x[1]-x[0];
+    dy=y[1]-y[0];
+    len=sqrt(dx*dx+dy*dy);
+    *nx=dy/(len);
+    *ny=-dx/(len);
+    *jac=len/2;
+    //printf("xL %f xR %f yL %f yR %f\n",x[0],x[1],y[0],y[1]);
+    //printf("dx %f dy %f len %f\n",dx,dy,len); 
 }

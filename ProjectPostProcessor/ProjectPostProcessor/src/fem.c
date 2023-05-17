@@ -756,7 +756,7 @@ femProblem* femElasticityRead(femGeo* theGeometry, const char *filename)
     double value;
     double typeCondition;
     
-    while (feof(file) != TRUE) {
+    while (!feof(file)) {
         ErrorScan(fscanf(file,"%19[^\n]s \n",(char *)&theLine));
         if (strncasecmp(theLine,"Type of problem     ",19) == 0) {
             ErrorScan(fscanf(file,":  %[^\n]s \n",(char *)&theArgument));

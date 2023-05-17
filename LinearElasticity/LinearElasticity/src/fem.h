@@ -31,12 +31,14 @@ typedef enum {DIRICHLET_X,DIRICHLET_Y,DIRICHLET_N,DIRICHLET_T,
               NEUMANN_X,NEUMANN_Y,NEUMANN_N,NEUMANN_T} femBoundaryType;
 typedef enum {PLANAR_STRESS,PLANAR_STRAIN,AXISYM} femElasticCase;
 typedef enum {FEM_FULL,FEM_BAND,FEM_ITER,FEM_Cholesky} femSolverType;
-
-
+typedef enum {FEM_NO,FEM_XNUM,FEM_YNUM} femRenumType;
+static const double _gaussDos2Eta[2]     = { -0.577350269189626, 0.577350269189626};
+static const double _gaussDos2Weight[2]  = { 1, 1};
 typedef struct {
     int nNodes;
     double *X;
     double *Y;
+    int*number;
 } femNodes;
 
 typedef struct {
@@ -101,13 +103,14 @@ typedef struct {
     int nBoundaryConditions;
     femBoundaryCondition **conditions;  
     int *constrainedNodes; 
+    int *contrainteEdges ;
     femGeo *geometry;
     femDiscrete *space;
     femIntegration *rule;
     femFullSystem *system;
 } femProblem;
 
-
+void                geoMeshGenerateGeo() ; 
 void                geoInitialize();
 femGeo*             geoGetGeometry();
 double              geoSize(double x, double y);
@@ -122,8 +125,8 @@ void                geoSetDomainName(int iDomain, char *name);
 int                 geoGetDomain(char *name);
 void                geoFinalize();
 
-femProblem*         femElasticityCreate(femGeo* theGeometry, 
-                                      double E, double nu, double rho, double g, femElasticCase iCase, femSolverType Type);
+femProblem *femElasticityCreate(femGeo* theGeometry, 
+                  double E, double nu, double rho, double g, femElasticCase iCase, femSolverType type,femRenumType renumType);
 void                femElasticityFree(femProblem *theProblem);
 void                femElasticityPrint(femProblem *theProblem);
 void                femElasticityAddBoundaryCondition(femProblem *theProblem, char *nameDomain, femBoundaryType type, double value);
@@ -153,6 +156,6 @@ void                femError(char *text, int line, char *file);
 void                femErrorScan(int test, int line, char *file);
 void                femErrorGmsh(int test, int line, char *file);
 void                femWarning(char *text, int line, char *file);
-
-
+void                getEdge(femProblem *problem,int iEdge,double *jac,double *nx,double *ny,int *map) ;
+void                femMeshRenumber(femMesh *theMesh, femRenumType renumType);
 #endif

@@ -123,7 +123,12 @@ CMakeFiles/myFem.dir/src/main.c.obj: ../src/main.c \
   C:/TDM-GCC-64/x86_64-w64-mingw32/include/math.h \
   C:/TDM-GCC-64/x86_64-w64-mingw32/include/string.h \
   C:/TDM-GCC-64/x86_64-w64-mingw32/include/sec_api/string_s.h \
-  ../gmsh/gmsh-4.11.1-Windows64-sdk/include/gmshc.h
+  ../gmsh/gmsh-4.11.1-Windows64-sdk/include/gmshc.h \
+  C:/TDM-GCC-64/x86_64-w64-mingw32/include/time.h \
+  C:/TDM-GCC-64/x86_64-w64-mingw32/include/_timeval.h \
+  C:/TDM-GCC-64/x86_64-w64-mingw32/include/sys/timeb.h \
+  C:/TDM-GCC-64/x86_64-w64-mingw32/include/sec_api/sys/timeb_s.h \
+  C:/TDM-GCC-64/x86_64-w64-mingw32/include/pthread_time.h
 
 
 C:/TDM-GCC-64/x86_64-w64-mingw32/include/sec_api/stdlib_s.h:
@@ -139,6 +144,8 @@ C:/TDM-GCC-64/x86_64-w64-mingw32/include/corecrt.h:
 C:/TDM-GCC-64/x86_64-w64-mingw32/include/sec_api/string_s.h:
 
 ../src/fem.h:
+
+C:/TDM-GCC-64/x86_64-w64-mingw32/include/_timeval.h:
 
 C:/TDM-GCC-64/x86_64-w64-mingw32/include/sdks/_mingw_ddk.h:
 
@@ -184,9 +191,13 @@ C:/TDM-GCC-64/x86_64-w64-mingw32/include/string.h:
 
 C:/TDM-GCC-64/lib/gcc/x86_64-w64-mingw32/10.3.0/include/stddef.h:
 
+C:/TDM-GCC-64/x86_64-w64-mingw32/include/pthread_time.h:
+
 C:/TDM-GCC-64/x86_64-w64-mingw32/include/stddef.h:
 
 ../src/glfem.c:
+
+C:/TDM-GCC-64/x86_64-w64-mingw32/include/sys/timeb.h:
 
 ../src/glfem.h:
 
@@ -197,3 +208,7 @@ C:/TDM-GCC-64/x86_64-w64-mingw32/include/stdint.h:
 C:/TDM-GCC-64/x86_64-w64-mingw32/include/GL/glu.h:
 
 ../src/main.c:
+
+C:/TDM-GCC-64/x86_64-w64-mingw32/include/time.h:
+
+C:/TDM-GCC-64/x86_64-w64-mingw32/include/sec_api/sys/timeb_s.h:

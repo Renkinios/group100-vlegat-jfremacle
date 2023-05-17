@@ -15,6 +15,8 @@ static const double _gaussQuad4Weight[4] = { 1.000000000000000, 1.00000000000000
 static const double _gaussTri3Xsi[3]     = { 0.166666666666667, 0.666666666666667, 0.166666666666667};
 static const double _gaussTri3Eta[3]     = { 0.166666666666667, 0.166666666666667, 0.666666666666667};
 static const double _gaussTri3Weight[3]  = { 0.166666666666667, 0.166666666666667, 0.166666666666667};
+static const double _gaussLine2Xsi[2]    = {-0.577350269189626, 0.577350269189626};
+static const double _gaussLine2Weight[2] = { 1.000000000000000, 1.000000000000000};
 
 
 femIntegration *femIntegrationCreate(int n, femElementType type)

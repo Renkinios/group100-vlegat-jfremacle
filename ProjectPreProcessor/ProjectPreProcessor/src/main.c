@@ -20,45 +20,54 @@ int main(void)
 //
 
     double Lx = 1.0;
-    double Ly = 1.0;     
+    double Ly =  1.0;     
     geoInitialize();
     femGeo* theGeometry = geoGetGeometry();
     
     theGeometry->LxPlate     =  Lx;
     theGeometry->LyPlate     =  Ly;     
     theGeometry->h           =  Lx * 0.05;    
-    theGeometry->elementType = FEM_QUAD;
+    theGeometry->elementType = FEM_TRIANGLE;
   
-    geoMeshGenerate();      // Utilisation de OpenCascade
+    // geoMeshGenerate();      // Utilisation de OpenCascade
     
-//  geoMeshGenerateGeo();   // Utilisation de outils de GMSH  
-                            // Attention : les entités sont différentes !
-                            // On a aussi inversé la géomtrie pour rire !
+    geoMeshGenerateGeo();   // Utilisation de outils de GMSH  
+                            // Attention : les entitï¿½s sont diffï¿½rentes !
+                            // On a aussi inversï¿½ la gï¿½omtrie pour rire !
                             
 //  geoMeshGenerateGeoFile("../data/mesh.geo");   // Lecture fichier geo
   
     geoMeshImport();
-    geoSetDomainName(0,"Symetry");
-    geoSetDomainName(7,"Bottom");
+    geoSetDomainName(0,"Contre poid gauche");
+    geoSetDomainName(1,"Contre poid haut");
+
+    geoSetDomainName(3,"Saut");
+    geoSetDomainName(7,"Contre poid bas");
+    geoSetDomainName(6,"Contre poid droit");
     geoMeshWrite("../data/mesh.txt");
           
 //
 //  -2- Definition du probleme
 //
     
-    double E   = 211.e9;
-    double nu  = 0.3;
-    double rho = 7.85e3; 
+    double E   = 2.e9;
+    double nu  = 0.37;
+    double rho = 1.22e3; 
     double g   = 9.81;
+    double m = 70 ; 
     femProblem* theProblem = femElasticityCreate(theGeometry,E,nu,rho,g,PLANAR_STRAIN);
-    femElasticityAddBoundaryCondition(theProblem,"Symetry",DIRICHLET_X,0.0);
-    femElasticityAddBoundaryCondition(theProblem,"Bottom",DIRICHLET_Y,0.0);
+
+    femElasticityAddBoundaryCondition(theProblem,"Contre poid gauche",DIRICHLET_X,0.0);
+    femElasticityAddBoundaryCondition(theProblem,"Contre poid droit",DIRICHLET_X,0.0);
+    femElasticityAddBoundaryCondition(theProblem,"Saut",NEUMANN_N, 9.81 * m );
+    femElasticityAddBoundaryCondition(theProblem,"Contre poid bas",DIRICHLET_Y, 0 );
+    femElasticityAddBoundaryCondition(theProblem,"Contre poid haut",DIRICHLET_Y, 0 );
     femElasticityPrint(theProblem);
     femElasticityWrite(theProblem,"../data/problem.txt");
  
 
 //
-//  -3- Champ de la taille de référence du maillage
+//  -3- Champ de la taille de rï¿½fï¿½rence du maillage
 //
 
     double *meshSizeField = malloc(theGeometry->theNodes->nNodes*sizeof(double));

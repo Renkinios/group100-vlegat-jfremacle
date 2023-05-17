@@ -1,0 +1,16 @@
+{
+    "files.associations": {
+        "stdexcept": "c",
+        "*.tcc": "c",
+        "bit": "c",
+        "compare": "c",
+        "cstddef": "c",
+        "string": "c",
+        "optional": "c",
+        "limits": "c",
+        "memory": "c",
+        "new": "c",
+        "ranges": "c",
+        "functional": "c"
+    }
+}

@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/Home/Desktop/ProjectPostProcessor/ProjectPostProcessor/glfw
+# Install script for directory: C:/Users/Home/Desktop/element_finis_devoir/ProjectPostProcessor/ProjectPostProcessor/glfw
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -39,7 +39,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("C:/Users/Home/Desktop/ProjectPostProcessor/ProjectPostProcessor/build/glfw/src/cmake_install.cmake")
+  include("C:/Users/Home/Desktop/element_finis_devoir/ProjectPostProcessor/ProjectPostProcessor/build/glfw/src/cmake_install.cmake")
 
 endif()
 

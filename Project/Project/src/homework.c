@@ -1,12 +1,54 @@
 #include "fem.h"
 
-// Il faut un fifrelin generaliser ce code.....
-//  (1) Ajouter l'axisymétrique !    (mandatory)
-//  (2) Ajouter les conditions de Neumann !   (mandatory)  
-//  (3) Ajouter les conditions en normal et tangentiel !   (strongly advised)
-//  (4) Et remplacer le solveur plein par un truc un fifrelin plus subtil  (mandatory)
 
+double **choleskyDecomposition(double **A, int n) {
+    int i, j, k;
+    double **L = malloc(n * sizeof(double *));
+    for (i = 0; i < n; i++) {
+        L[i] = malloc(n * sizeof(double));
+    }
+    L[0][0] = sqrt(A[0][0]);
+    for (i = 0; i < n; i++) {
+        for (j = 0; j < (i + 1); j++) {
+            double sum = 0.0;
 
+            if (i == j) {
+                for (k = 0; k < j; k++) {
+                    sum += pow(L[j][k], 2);
+                }
+                L[j][j] = sqrt(A[j][j] - sum);
+            } else {
+                for (k = 0; k < j; k++) {
+                    sum += L[i][k] * L[j][k];
+                }
+                L[i][j] = (A[i][j] - sum) / L[j][j];
+            }
+        }
+    }
+    return L;
+}
+double *solvecholesky(double **L, double *b, int n) {
+    int i, j;
+    double y[n];
+    double *x = malloc(n * sizeof(double));
+    y[0] = b[0] / L[0][0];
+    for (i = 1; i < n; i++) {
+        double sum = 0.0;
+        for (j = 0; j < i; j++) {
+            sum += L[i][j] * y[j];
+        }
+        y[i] = (b[i] - sum) / L[i][i];
+    }
+    x[n - 1] = y[n - 1] / L[n - 1][n - 1];
+    for (i = n - 2; i >= 0; i--) {
+        double sum = 0.0;
+        for (j = i + 1; j < n; j++) {
+            sum += L[j][i] * x[j];
+        }
+        x[i] = (y[i] - sum) / L[i][i];
+    }
+    return x;
+}
 
 double *femElasticitySolve(femProblem *theProblem)
 {
@@ -17,9 +59,10 @@ double *femElasticitySolve(femProblem *theProblem)
     femGeo         *theGeometry = theProblem->geometry;
     femNodes       *theNodes = theGeometry->theNodes;
     femMesh        *theMesh = theGeometry->theElements;
+    femMesh        *theEdges = theGeometry->theEdges;
     
     
-    double x[4],y[4],phi[4],dphidxsi[4],dphideta[4],dphidx[4],dphidy[4];
+    double x[4],y[4],phi[4],dphidxsi[4],dphideta[4],dphidx[4],dphidy[4],r;
     int iElem,iInteg,iEdge,i,j,d,map[4],mapX[4],mapY[4];
     
     int nLocal = theMesh->nLocalNode;
@@ -56,49 +99,154 @@ double *femElasticitySolve(femProblem *theProblem)
                 dxdxsi += x[i]*dphidxsi[i];       
                 dxdeta += x[i]*dphideta[i];   
                 dydxsi += y[i]*dphidxsi[i];   
-                dydeta += y[i]*dphideta[i]; }
+                dydeta += y[i]*dphideta[i]; 
+                r += x[i]*phi[i];
+            }
             double jac = fabs(dxdxsi * dydeta - dxdeta * dydxsi);
-            // x like r y like z
+            
             for (i = 0; i < theSpace->n; i++) {    
                 dphidx[i] = (dphidxsi[i] * dydeta - dphideta[i] * dydxsi) / jac;       
-                dphidy[i] = (dphideta[i] * dxdxsi - dphidxsi[i] * dxdeta) / jac; }        
-            switch (theProblem->planarStrainStress)
+                dphidy[i] = (dphideta[i] * dxdxsi - dphidxsi[i] * dxdeta) / jac; 
+            }            
+            for (i = 0; i < theSpace->n; i++) { 
+                for(j = 0; j < theSpace->n; j++) {
+                    if (theProblem->planarStrainStress == PLANAR_STRESS || theProblem->planarStrainStress == PLANAR_STRAIN)
+                    {
+                        A[mapX[i]][mapX[j]] += (dphidx[i] * a * dphidx[j] + 
+                                                dphidy[i] * c * dphidy[j]) * jac * weight;                                                                                            
+                        A[mapX[i]][mapY[j]] += (dphidx[i] * b * dphidy[j] + 
+                                                dphidy[i] * c * dphidx[j]) * jac * weight;                                                                                           
+                        A[mapY[i]][mapX[j]] += (dphidy[i] * b * dphidx[j] + 
+                                                dphidx[i] * c * dphidy[j]) * jac * weight;                                                                                            
+                        A[mapY[i]][mapY[j]] += (dphidy[i] * a * dphidy[j] + 
+                                                dphidx[i] * c * dphidx[j]) * jac * weight; 
+                    }
+                    if (theProblem->planarStrainStress == AXISYM)
+                    {
+                        A[mapX[i]][mapX[j]] += (dphidx[i] * a * r * dphidx[j] + 
+                                            dphidy[i] * c * r * dphidy[j] + dphidx[i] * b * phi[j] + phi[i]*(b*dphidx[j] + a*phi[j]/r)) * jac * weight;                                                                                            
+                        A[mapX[i]][mapY[j]] += (dphidx[i] * b * r * dphidy[j] + 
+                                            dphidy[i] * c * r * dphidx[j] + b*phi[i]*dphidy[j]) * jac * weight;                                                                                           
+                        A[mapY[i]][mapX[j]] += (dphidy[i] * b * r * dphidx[j] + 
+                                            dphidx[i] * c * r * dphidy[j] + b*dphidy[i]*phi[j]) * jac * weight;                                                                                            
+                        A[mapY[i]][mapY[j]] += (dphidy[i] * a * r * dphidy[j] + 
+                                            dphidx[i] * c * r * dphidx[j]) * jac * weight; 
+                    }
+                    
+                }
+            }
+            for (i = 0; i < theSpace->n; i++) {
+                if (theProblem->planarStrainStress == AXISYM)
+                {
+                    B[mapY[i]] -= phi[i] * g * rho * jac * weight * r ;
+                }       
+                if (theProblem->planarStrainStress == PLANAR_STRESS || theProblem->planarStrainStress == PLANAR_STRAIN)
+                {
+                    B[mapY[i]] -= phi[i] * g * rho * jac * weight ;
+                }
+            }
+        }
+    }    
+
+    int *theConstrainedEdges = theProblem->contrainteEdges; 
+
+    for  (int iEdge=0; iEdge < theEdges->nElem; iEdge++)
+    {
+        if (theConstrainedEdges[iEdge] != -1) {
+            double value = theProblem->conditions[theConstrainedEdges[iEdge]]->value;
+            int type = theProblem->conditions[theConstrainedEdges[iEdge]]->type;
+            double jac,nx,ny;
+            printf("okko \n") ; 
+
+            for (int iInteg=0;iInteg<2;iInteg++)
             {
-            case PLANAR_STRESS || PLANAR_STRAIN: 
-                for (i = 0; i < theSpace->n; i++) { 
-                    for(j = 0; j < theSpace->n; j++) {
-                        A[mapX[i]][mapX[j]] += (dphidx[i] * a * dphidx[j] + 
-                                                dphidy[i] * c * dphidy[j]) * jac * weight;                                                                                            
-                        A[mapX[i]][mapY[j]] += (dphidx[i] * b * dphidy[j] + 
-                                                dphidy[i] * c * dphidx[j]) * jac * weight;                                                                                           
-                        A[mapY[i]][mapX[j]] += (dphidy[i] * b * dphidx[j] + 
-                                                dphidx[i] * c * dphidy[j]) * jac * weight;                                                                                            
-                        A[mapY[i]][mapY[j]] += (dphidy[i] * a * dphidy[j] + 
-                                                dphidx[i] * c * dphidx[j]) * jac * weight; }}
-                break;
-            
-            case AXISYM:
-                for (i = 0; i < theSpace->n; i++) { 
-                    for(j = 0; j < theSpace->n; j++) {
-                        A[mapX[i]][mapX[j]] += (dphidx[i] * a * dphidx[j] + 
-                                                dphidy[i] * c * dphidy[j]) * jac * weight;                                                                                            
-                        A[mapX[i]][mapY[j]] += (dphidx[i] * b * dphidy[j] + 
-                                                dphidy[i] * c * dphidx[j]) * jac * weight;                                                                                           
-                        A[mapY[i]][mapX[j]] += (dphidy[i] * b * dphidx[j] + 
-                                                dphidx[i] * c * dphidy[j]) * jac * weight;                                                                                            
-                        A[mapY[i]][mapY[j]] += (dphidy[i] * a * dphidy[j] + 
-                                                dphidx[i] * c * dphidx[j]) * jac * weight; }}
-                break;
-            }    
-            
-             for (i = 0; i < theSpace->n; i++) {
-                B[mapY[i]] -= phi[i] * g * rho * jac * weight; }}} 
-  
+            double phi[2] = {(1. - _gaussDos2Eta[iInteg]) / 2., (1. + _gaussDos2Eta[iInteg]) / 2.};
+            printf("okko \n") ; 
+            int Nmap[2]; 
+            getEdge(theProblem,iEdge,&jac,&nx,&ny,Nmap); 
+            for(int i=0;i<2;i++)
+                {
+                    if (type==NEUMANN_X) B[2*Nmap[i]]+= phi[i]*value*jac*_gaussDos2Weight[iInteg];
+                    if (type==NEUMANN_Y) B[2*Nmap[i]+1]+= phi[i]*value*jac*_gaussDos2Weight[iInteg];
+                    if (type==NEUMANN_N)
+                    {
+                        if (nx!=0) B[2*Nmap[i]]+= phi[i]*value*jac*nx*_gaussDos2Weight[iInteg];
+                        if (ny!=0) B[2*Nmap[i]+1]+= phi[i]*value*jac*ny*_gaussDos2Weight[iInteg];
+                    }
+                    if (type==NEUMANN_T)
+                    {
+                        if (ny!=0) B[2*Nmap[i]]+= phi[i]*value*jac*ny*_gaussDos2Weight[iInteg];
+                        if (nx!=0) B[2*Nmap[i]+1]-= phi[i]*value*jac*nx*_gaussDos2Weight[iInteg];
+                    }
+                }
+
+            }
+        }
+    }
     int *theConstrainedNodes = theProblem->constrainedNodes;     
     for (int i=0; i < theSystem->size; i++) {
         if (theConstrainedNodes[i] != -1) {
             double value = theProblem->conditions[theConstrainedNodes[i]]->value;
-            femFullSystemConstrain(theSystem,i,value,theProblem->conditions[theConstrainedNodes[i]]->type); }}
-                            
-    return femFullSystemEliminate(theSystem);
+            femFullSystemConstrain(theSystem,i,value,theProblem->conditions[theConstrainedNodes[i]]->type); 
+           }
+    }
+    double *sol ;
+    double **L ;
+    switch (theProblem->system->type)
+    {
+    case FEM_Cholesky:
+        L  = choleskyDecomposition(A,theSystem->size);  
+        sol = solvecholesky(L,theSystem->B,theSystem->size) ;
+        break;
+    case FEM_FULL : 
+        sol = femFullSystemEliminate(theSystem);
+        break;
+    default:
+        Error("Unexpected solver option");
+        break;
+    }   
+    return sol; 
+}
+double *theGlobalCoord;
+
+int compare(const void *nodeOne, const void *nodeTwo) 
+{
+    int *iOne = (int *)nodeOne;
+    int *iTwo = (int *)nodeTwo;
+    double diff = theGlobalCoord[*iOne] - theGlobalCoord[*iTwo];
+    if (diff < 0)    return  1;
+    if (diff > 0)    return -1;
+    return  0;  
+}
+
+void femMeshRenumber(femMesh *theMesh, femRenumType renumType)
+{
+    int i, *inverse;
+    
+    switch (renumType) {
+        case FEM_NO :
+            for (i = 0; i < theMesh->nodes->nNodes; i++) 
+                theMesh->nodes->number[i] = i;
+            break;
+        case FEM_XNUM : 
+            inverse = malloc(sizeof(int)*theMesh->nodes->nNodes);
+            for (i = 0; i < theMesh->nodes->nNodes; i++) 
+                inverse[i] = i; 
+            theGlobalCoord = theMesh->nodes->X;
+            qsort(inverse, theMesh->nodes->nNodes, sizeof(int), compare);
+            for (i = 0; i < theMesh->nodes->nNodes; i++)
+                theMesh->nodes->number[inverse[i]] = i;
+            free(inverse);  
+            break;
+        case FEM_YNUM : 
+            inverse = malloc(sizeof(int)*theMesh->nodes->nNodes);
+            for (i = 0; i < theMesh->nodes->nNodes; i++) 
+                inverse[i] = i; 
+            theGlobalCoord = theMesh->nodes->Y;
+            qsort(inverse, theMesh->nodes->nNodes, sizeof(int), compare);
+            for (i = 0; i < theMesh->nodes->nNodes; i++)
+                theMesh->nodes->number[inverse[i]] = i;
+            free(inverse);  
+            break;
+        default : Error("Unexpected renumbering option"); }
 }

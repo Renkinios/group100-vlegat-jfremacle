@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/Home/Desktop/ProjectPostProcessor/ProjectPostProcessor/glfw/src
+# Install script for directory: C:/Users/Home/Desktop/element_finis_devoir/ProjectPostProcessor/ProjectPostProcessor/glfw/src
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

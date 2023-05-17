@@ -151,7 +151,9 @@ void geoMeshRead(const char *filename)
    theNodes->Y = malloc(sizeof(double)*(theNodes->nNodes));
    for (int i = 0; i < theNodes->nNodes; i++) {
        ErrorScan(fscanf(file,"%d : %le %le \n",&trash,&theNodes->X[i],&theNodes->Y[i]));} 
-
+    theNodes->number = malloc(sizeof(int)*theNodes->nNodes); 
+    for (int i = 0; i < theNodes->nNodes; i++) 
+          theNodes->number[i] = i; 
    femMesh *theEdges = malloc(sizeof(femMesh));
    theGeometry.theEdges = theEdges;
    theEdges->nLocalNode = 2;
@@ -197,7 +199,7 @@ void geoMeshRead(const char *filename)
       for (int i=0; i < theDomain->nElem; i++){
           ErrorScan(fscanf(file,"%6d",&theDomain->elem[i]));
           if ((i+1) != theDomain->nElem  && (i+1) % 10 == 0) ErrorScan(fscanf(file,"\n")); }}
-    
+          
    fclose(file);
 }
 
@@ -365,12 +367,13 @@ void femDiscretePrint(femDiscrete *mySpace)
 
 
 
-femFullSystem *femFullSystemCreate(int size)
-{
+femFullSystem *femFullSystemCreate(int size,femSolverType type)
+{   
+    
     femFullSystem *theSystem = malloc(sizeof(femFullSystem));
     femFullSystemAlloc(theSystem, size);
     femFullSystemInit(theSystem);
-
+    theSystem->type = type; 
     return theSystem; 
 }
 
@@ -480,7 +483,7 @@ void  femFullSystemConstrain(femFullSystem *mySystem, int myNode, double myValue
 
 
 femProblem *femElasticityCreate(femGeo* theGeometry, 
-                  double E, double nu, double rho, double g, femElasticCase iCase)
+                  double E, double nu, double rho, double g, femElasticCase iCase, femSolverType type,femRenumType renumType)
 {
     femProblem *theProblem = malloc(sizeof(femProblem));
     theProblem->E   = E;
@@ -502,10 +505,13 @@ femProblem *femElasticityCreate(femGeo* theGeometry,
     theProblem->conditions = NULL;
     
     int size = 2*theGeometry->theNodes->nNodes;
+    int number_Edges= theGeometry->theEdges->nElem;
+    theProblem->contrainteEdges = malloc(number_Edges*sizeof(int)) ; 
     theProblem->constrainedNodes = malloc(size*sizeof(int));
     for (int i=0; i < size; i++) 
         theProblem->constrainedNodes[i] = -1;
-    
+    for(int i=0; i < number_Edges; i++)
+        theProblem->contrainteEdges[i] = -1;
     theProblem->geometry = theGeometry;  
     if (theGeometry->theElements->nLocalNode == 3) {
         theProblem->space    = femDiscreteCreate(3,FEM_TRIANGLE);
@@ -513,10 +519,11 @@ femProblem *femElasticityCreate(femGeo* theGeometry,
     if (theGeometry->theElements->nLocalNode == 4) {
         theProblem->space    = femDiscreteCreate(4,FEM_QUAD);
         theProblem->rule     = femIntegrationCreate(4,FEM_QUAD); }
-    theProblem->system   = femFullSystemCreate(size); 
+    femMeshRenumber(theProblem->geometry->theElements,renumType);
+    theProblem->system   = femFullSystemCreate(size,type); 
+
     return theProblem;
 }
-
 void femElasticityFree(femProblem *theProblem)
 {
     femFullSystemFree(theProblem->system);
@@ -547,8 +554,8 @@ void femElasticityAddBoundaryCondition(femProblem *theProblem, char *nameDomain,
     
     
     int shift;
-    if (type == DIRICHLET_X || type == NEUMANN_X)  shift = 0;      
-    if (type == DIRICHLET_Y || type == NEUMANN_Y) shift = 1;  
+    if (type == DIRICHLET_X )  shift = 0;      
+    if (type == DIRICHLET_Y ) shift = 1;  
     int *elem = theBoundary->domain->elem;
     int nElem = theBoundary->domain->nElem;
     for (int e=0; e<nElem; e++) {
@@ -610,7 +617,7 @@ void femElasticityWrite(femProblem *theProblem, const char *filename)
    fclose(file);
 }
 
-femProblem* femElasticityRead(femGeo* theGeometry, const char *filename)
+femProblem* femElasticityRead(femGeo* theGeometry, const char *filename, femSolverType type,femRenumType renumType)
 {
     FILE* file = fopen(filename,"r");
     femProblem *theProblem = malloc(sizeof(femProblem));
@@ -619,8 +626,14 @@ femProblem* femElasticityRead(femGeo* theGeometry, const char *filename)
     
     int size = 2*theGeometry->theNodes->nNodes;
     theProblem->constrainedNodes = malloc(size*sizeof(int));
+    int nbr_Edges= theGeometry->theEdges->nElem;
+    theProblem->contrainteEdges = malloc(nbr_Edges*sizeof(int)) ;
+
     for (int i=0; i < size; i++) 
         theProblem->constrainedNodes[i] = -1;
+    for (int i=0; i < nbr_Edges; i++) 
+    
+         theProblem->contrainteEdges[i] = -1;
     
     theProblem->geometry = theGeometry;  
     if (theGeometry->theElements->nLocalNode == 3) {
@@ -629,7 +642,7 @@ femProblem* femElasticityRead(femGeo* theGeometry, const char *filename)
     if (theGeometry->theElements->nLocalNode == 4) {
         theProblem->space    = femDiscreteCreate(4,FEM_QUAD);
         theProblem->rule     = femIntegrationCreate(4,FEM_QUAD); }
-    theProblem->system   = femFullSystemCreate(size); 
+    theProblem->system   = femFullSystemCreate(size,type); 
 
 
     char theLine[MAXNAME];
@@ -681,7 +694,7 @@ femProblem* femElasticityRead(femGeo* theGeometry, const char *filename)
         theProblem->A = E*(1-nu)/((1+nu)*(1-2*nu));
         theProblem->B = E*nu/((1+nu)*(1-2*nu));
         theProblem->C = E/(2*(1+nu)); }
-
+    femMeshRenumber(theProblem->geometry->theElements,renumType);
 
     fclose(file);
     return theProblem;
@@ -758,4 +771,26 @@ void femWarning(char *text, int line, char *file)
     printf("\n-------------------------------------------------------------------------------- ");
     printf("\n  Warning in %s at line %d : \n  %s\n", file, line, text);
     printf("--------------------------------------------------------------------- Yek Yek !! \n\n");                                              
+}
+void  getEdge(femProblem *problem,int iEdge,double *jac,double *nx,double *ny,int *map)
+{
+    double x[2],y[2],dx,dy,len;
+
+    int nodeL= problem->geometry->theEdges->elem[iEdge*2];
+    int nodeR= problem->geometry->theEdges->elem[iEdge*2+1];
+    double *X=problem->geometry->theNodes->X;
+    double *Y=problem->geometry->theNodes->Y;
+    x[0]=X[nodeL];
+    x[1]=X[nodeR];
+    y[0]=Y[nodeL];
+    y[1]=Y[nodeR];
+    printf("X[0] = %f, Y[0] = %f, X[1] = %f, Y[1] = %f\n",X[nodeL],Y[nodeL],X[nodeR],Y[nodeR]);
+    dx=x[1]-x[0];
+    dy=y[1]-y[0];
+    len=sqrt(dx*dx+dy*dy);
+    *nx=dy/(len);
+    *ny=-dx/(len);
+    *jac=len/2;
+    //printf("xL %f xR %f yL %f yR %f\n",x[0],x[1],y[0],y[1]);
+    //printf("dx %f dy %f len %f\n",dx,dy,len); 
 }

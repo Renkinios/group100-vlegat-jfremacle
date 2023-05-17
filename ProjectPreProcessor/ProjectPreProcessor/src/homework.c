@@ -26,15 +26,23 @@ void geoMeshGenerate() {
     
     int ierr;
     double r = w/4;
-    int idRect = gmshModelOccAddRectangle(0.0,0.0,0.0,w,h,-1,0.0,&ierr); 
-    int idDisk = gmshModelOccAddDisk(w/2.0,h/2.0,0.0,r,r,-1,NULL,0,NULL,0,&ierr); 
-    int idSlit = gmshModelOccAddRectangle(w/2.0,h/2.0-r,0.0,w,2.0*r,-1,0.0,&ierr); 
-    int rect[] = {2,idRect};
-    int disk[] = {2,idDisk};
-    int slit[] = {2,idSlit};
+    double e = 0.05;
+    double haut = 0.5 ; 
+    double L = 2 ;
+    int idRect = gmshModelOccAddRectangle(0.0,0.0,0.0,w,w,-1,0.0,&ierr); 
 
-    gmshModelOccCut(rect,2,disk,2,NULL,NULL,NULL,NULL,NULL,-1,1,1,&ierr); 
-    gmshModelOccCut(rect,2,slit,2,NULL,NULL,NULL,NULL,NULL,-1,1,1,&ierr); 
+    ErrorGmsh(ierr);
+
+    // int drectangle_up = gmshModelOccAddRectangle(0.0,0,0,L,e,-1,0.0,&ierr) ;
+    // ErrorGmsh(ierr);
+    // int idDisk = gmshModelOccAddDisk(w/2.0,h/2.0,0.0,r,r,-1,NULL,0,NULL,0,&ierr); 
+    // int idSlit = gmshModelOccAddRectangle(w/2.0,h/2.0-r,0.0,w,2.0*r,-1,0.0,&ierr); 
+    int rect[] = {2,idRect};
+    // int disk[] = {2,idDisk};
+    // int slit[] = {2,idSlit};
+
+    // gmshModelOccCut(rect,2,disk,2,NULL,NULL,NULL,NULL,NULL,-1,1,1,&ierr); 
+    // gmshModelOccCut(rect,2,slit,2,NULL,NULL,NULL,NULL,NULL,-1,1,1,&ierr); 
     gmshModelOccSynchronize(&ierr); 
 
     if (theGeometry->elementType == FEM_QUAD) {
@@ -79,15 +87,18 @@ void geoMeshGenerateGeo() {
     double r = w/4;
     double lc = theGeometry->h;
 
-    int p1 = gmshModelGeoAddPoint(-w/2, -h/2, 0., lc, 1, &ierr);
-    int p2 = gmshModelGeoAddPoint( w/2, -h/2, 0., lc, 2, &ierr);
-    int p3 = gmshModelGeoAddPoint( w/2,  h/2, 0., lc, 3, &ierr);
-    int p4 = gmshModelGeoAddPoint(-w/2,  h/2, 0., lc, 4, &ierr);
-    int p5 = gmshModelGeoAddPoint(-w/2,    r, 0., lc, 5, &ierr);
-    int p6 = gmshModelGeoAddPoint(0.,      r, 0., lc, 6, &ierr);
-    int p7 = gmshModelGeoAddPoint(0.,     -r, 0., lc, 7, &ierr);
-    int p8 = gmshModelGeoAddPoint(-w/2,   -r, 0., lc, 8, &ierr);
-    int p9 = gmshModelGeoAddPoint(0.,     0., 0., lc, 9, &ierr); // center of circle
+    double e = 0.07;
+    double HAUT = 1 ; 
+    double L = 1.8 ;
+    double jump = 0.2 ;
+    int p1 = gmshModelGeoAddPoint(0, 0, 0., lc, 1, &ierr);
+    int p2 = gmshModelGeoAddPoint(0, HAUT+e, 0., lc, 2, &ierr);
+    int p3 = gmshModelGeoAddPoint(HAUT/4,    HAUT+e, 0., lc, 3, &ierr);
+    int p4 = gmshModelGeoAddPoint(L-jump,  HAUT+e, 0., lc, 4, &ierr);
+    int p5 = gmshModelGeoAddPoint(L,    HAUT+e, 0., lc, 5, &ierr);
+    int p6 = gmshModelGeoAddPoint(L,      HAUT, 0., lc, 6, &ierr);
+    int p7 = gmshModelGeoAddPoint(HAUT/4,     HAUT, 0., lc, 7, &ierr);
+    int p8 = gmshModelGeoAddPoint(HAUT/4,   0, 0., lc, 8, &ierr);
 
 
     int l1 = gmshModelGeoAddLine(p1, p2, 1, &ierr);
@@ -95,11 +106,11 @@ void geoMeshGenerateGeo() {
     int l3 = gmshModelGeoAddLine(p3, p4, 3, &ierr);
     int l4 = gmshModelGeoAddLine(p4, p5, 4, &ierr);
     int l5 = gmshModelGeoAddLine(p5, p6, 5, &ierr);
-    int l6 = gmshModelGeoAddCircleArc(p7, p9, p6, 6, 0., 0., 0., &ierr); // NB : the direction of the curve is reversed
+    int l6 = gmshModelGeoAddLine(p6, p7, 6, &ierr);
     int l7 = gmshModelGeoAddLine(p7, p8, 7, &ierr);
-    int l8 = gmshModelGeoAddLine(p8, p1, 8, &ierr);
+    int l8 = gmshModelGeoAddLine(p8, p1, 8, &ierr); 
 
-    int lTags[] = {l1, l2, l3, l4, l5, -l6, l7, l8}; // NB : "-l6" because the curve is reversed 
+    int lTags[] = {l1, l2, l3, l4, l5, l6,l7,l8};
     int c1[] = {1};
     c1[0] = gmshModelGeoAddCurveLoop(lTags, 8, 1, 0, &ierr);  
     int s1 = gmshModelGeoAddPlaneSurface(c1, 1, 1, &ierr);

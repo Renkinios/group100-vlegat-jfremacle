@@ -17,6 +17,8 @@
         "new": "c",
         "ranges": "c",
         "functional": "c",
-        "random": "c"
+        "random": "c",
+        "stdexcept": "c",
+        "*.tcc": "c"
     }
 }

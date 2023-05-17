@@ -9,7 +9,7 @@
  */
  
 #include "glfem.h"
-
+#include <time.h>
 
 int main(void)
 {  
@@ -29,26 +29,41 @@ int main(void)
     theGeometry->h           =  Lx * 0.05;    
     theGeometry->elementType = FEM_QUAD;
   
-    geoMeshGenerate();
+    // geoMeshGenerate(); 
+    // geoMeshImport();
+    // geoSetDomainName(0,"Symmetry");
+    // geoSetDomainName(7,"Bottom");
+    // geoSetDomainName(6,"Top");
+    geoMeshGenerateGeo();
     geoMeshImport();
-    geoSetDomainName(0,"Symmetry");
-    geoSetDomainName(7,"Bottom");
-    geoSetDomainName(1,"Top");
-        
+    geoSetDomainName(0,"Contre poid gauche");
+    geoSetDomainName(1,"Contre poid haut");
+
+    geoSetDomainName(3,"Saut");
+    geoSetDomainName(7,"Contre poid bas");
+    geoSetDomainName(6,"Contre poid droit");
 //
 //  -2- Creation probleme 
 //
-    
     double E   = 211.e9;
     double nu  = 0.3;
     double rho = 7.85e3; 
     double g   = 9.81;
-    femProblem* theProblem = femElasticityCreate(theGeometry,E,nu,rho,g,PLANAR_STRAIN,FEM_Cholesky);
-    femElasticityAddBoundaryCondition(theProblem,"Symmetry",DIRICHLET_X,0); 
-    femElasticityAddBoundaryCondition(theProblem,"Bottom",DIRICHLET_Y,0);
-    femElasticityAddBoundaryCondition(theProblem,"Top",NEUMANN_Y,9.81);
-    femElasticityPrint(theProblem);
+    double m = 7000; 
+    femProblem* theProblem = femElasticityCreate(theGeometry,E,nu,rho,g,PLANAR_STRESS,FEM_FULL,FEM_YNUM);
+    // femElasticityAddBoundaryCondition(theProblem,"Symmetry",DIRICHLET_X,0); 
+    // femElasticityAddBoundaryCondition(theProblem,"Bottom",DIRICHLET_Y,0);
+    // femElasticityAddBoundaryCondition(theProblem,"Top",NEUMANN_T,300);    
+    femElasticityAddBoundaryCondition(theProblem,"Contre poid gauche",DIRICHLET_X,0.0);
+    // femElasticityAddBoundaryCondition(theProblem,"Contre poid droit",DIRICHLET_X,0.0);
+    femElasticityAddBoundaryCondition(theProblem,"Saut",NEUMANN_T, 9.81 * m ) ;    
+    femElasticityAddBoundaryCondition(theProblem,"Contre poid bas",DIRICHLET_Y, 0 ) ;
+
+    // femElasticityPrint(theProblem);
+    clock_t tic = clock();
     double *theSoluce = femElasticitySolve(theProblem); 
+    printf("    CPU time : %.2f [sec] \n", (clock() - tic) * 1.0 /CLOCKS_PER_SEC);
+
    
 //
 //  -3- Deformation du maillage pour le plot final
@@ -56,7 +71,7 @@ int main(void)
 //
     
     femNodes *theNodes = theGeometry->theNodes;
-    double deformationFactor = 1e5;
+    double deformationFactor = 1e2;
     double *normDisplacement = malloc(theNodes->nNodes * sizeof(double));
     
     for (int i=0; i<theNodes->nNodes; i++){
@@ -65,10 +80,10 @@ int main(void)
         normDisplacement[i] = sqrt(theSoluce[2*i+0]*theSoluce[2*i+0] + 
                                    theSoluce[2*i+1]*theSoluce[2*i+1]); }
   
-    double hMin = femMin(normDisplacement,theNodes->nNodes);  
-    double hMax = femMax(normDisplacement,theNodes->nNodes);  
-    printf(" ==== Minimum displacement          : %14.7e \n",hMin);
-    printf(" ==== Maximum displacement          : %14.7e \n",hMax);
+    // double hMin = femMin(normDisplacement,theNodes->nNodes);  
+    // double hMax = femMax(normDisplacement,theNodes->nNodes);  
+    // printf(" ==== Minimum displacement          : %14.7e \n",hMin);
+    // printf(" ==== Maximum displacement          : %14.7e \n",hMax);
  
 //
 //  -4- Visualisation du maillage

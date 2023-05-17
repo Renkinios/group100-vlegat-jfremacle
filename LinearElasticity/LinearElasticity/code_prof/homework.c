@@ -87,12 +87,14 @@ double *femElasticitySolve(femProblem *theProblem)
                 dxdxsi += x[i]*dphidxsi[i];       
                 dxdeta += x[i]*dphideta[i];   
                 dydxsi += y[i]*dphidxsi[i];   
-                dydeta += y[i]*dphideta[i]; }
+                dydeta += y[i]*dphideta[i]; 
+            }
             double jac = fabs(dxdxsi * dydeta - dxdeta * dydxsi);
             
             for (i = 0; i < theSpace->n; i++) {    
                 dphidx[i] = (dphidxsi[i] * dydeta - dphideta[i] * dydxsi) / jac;       
-                dphidy[i] = (dphideta[i] * dxdxsi - dphidxsi[i] * dxdeta) / jac; }            
+                dphidy[i] = (dphideta[i] * dxdxsi - dphidxsi[i] * dxdeta) / jac; 
+            }            
             for (i = 0; i < theSpace->n; i++) { 
                 for(j = 0; j < theSpace->n; j++) {
                     A[mapX[i]][mapX[j]] += (dphidx[i] * a * dphidx[j] + 
@@ -102,15 +104,21 @@ double *femElasticitySolve(femProblem *theProblem)
                     A[mapY[i]][mapX[j]] += (dphidy[i] * b * dphidx[j] + 
                                             dphidx[i] * c * dphidy[j]) * jac * weight;                                                                                            
                     A[mapY[i]][mapY[j]] += (dphidy[i] * a * dphidy[j] + 
-                                            dphidx[i] * c * dphidx[j]) * jac * weight; }}
-             for (i = 0; i < theSpace->n; i++) {
-                B[mapY[i]] -= phi[i] * g * rho * jac * weight; }}} 
-  
+                                            dphidx[i] * c * dphidx[j]) * jac * weight; 
+                }
+            }
+            for (i = 0; i < theSpace->n; i++) {
+                B[mapY[i]] -= phi[i] * g * rho * jac * weight; 
+            }
+        }
+    } 
     int *theConstrainedNodes = theProblem->constrainedNodes;     
     for (int i=0; i < theSystem->size; i++) {
         if (theConstrainedNodes[i] != -1) {
             double value = theProblem->conditions[theConstrainedNodes[i]]->value;
-            femFullSystemConstrain(theSystem,i,value); }}
+            femFullSystemConstrain(theSystem,i,value,theProblem->conditions[theConstrainedNodes[i]]->type); 
+        }
+    }
                             
     return femFullSystemEliminate(theSystem);
 }
