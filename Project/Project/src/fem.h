@@ -167,5 +167,6 @@ void                femErrorGmsh(int test, int line, char *file);
 void                femWarning(char *text, int line, char *file);
 void                getEdge(femProblem *problem,int iEdge,double *jac,double *nx,double *ny,int *map) ;
 void                femMeshRenumber(femMesh *theMesh, femRenumType renumType);
-
+void                femSystemConstrainNEUMANN(femProblem *theProblem,femFullSystem *mySystem, 
+                                int iEdge, double value,femBoundaryType type,femElasticCase iCase) ;
 #endif

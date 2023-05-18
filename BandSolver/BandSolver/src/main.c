@@ -37,8 +37,8 @@ int main(void)
     
     femDiffusionProblem* theProblem = femDiffusionCreate(meshFileName,solverType,renumType);
     clock_t tic = clock();
-    femDiffusionCompute(theProblem) ;  
-    femSolverPrintInfos(theProblem->solver) ;
+    femDiffusionCompute(theProblem);  
+    femSolverPrintInfos(theProblem->solver);
     printf("    CPU time : %.2f [sec] \n", (clock() - tic) * 1.0 /CLOCKS_PER_SEC);
     printf("    Maximum value : %.4f\n", femMax(theProblem->soluce,theProblem->size));
     fflush(stdout);

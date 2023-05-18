@@ -74,7 +74,12 @@ double *femElasticitySolve(femProblem *theProblem)
     double g   = theProblem->g;
     double **A = theSystem->A;
     double *B  = theSystem->B;
-    
+    // printf("\n=====================================\n");
+    // printf("    Constrained number_1 : \n");
+    // for (size_t i = 0; i < theSystem->size; i++)
+    // {
+    //     printf(" B : %f \t ", B[i]);
+    // }
     
     for (iElem = 0; iElem < theMesh->nElem; iElem++) {
         for (j=0; j < nLocal; j++) {
@@ -146,41 +151,20 @@ double *femElasticitySolve(femProblem *theProblem)
                 }
             }
         }
-    }    
-
+    }  
+    // printf("\n=====================================\n");
+    // printf("    Constrained number_2 : \n");
+    // for (size_t i = 0; i < theSystem->size; i++)
+    // {
+    //     printf(" B : %f \t ", B[i]);
+    // }
     int *theConstrainedEdges = theProblem->contrainteEdges; 
-
     for  (int iEdge=0; iEdge < theEdges->nElem; iEdge++)
     {
         if (theConstrainedEdges[iEdge] != -1) {
             double value = theProblem->conditions[theConstrainedEdges[iEdge]]->value;
             int type = theProblem->conditions[theConstrainedEdges[iEdge]]->type;
-            double jac,nx,ny;
-            printf("okko \n") ; 
-
-            for (int iInteg=0;iInteg<2;iInteg++)
-            {
-            double phi[2] = {(1. - _gaussDos2Eta[iInteg]) / 2., (1. + _gaussDos2Eta[iInteg]) / 2.};
-            printf("okko \n") ; 
-            int Nmap[2]; 
-            getEdge(theProblem,iEdge,&jac,&nx,&ny,Nmap); 
-            for(int i=0;i<2;i++)
-                {
-                    if (type==NEUMANN_X) B[2*Nmap[i]]+= phi[i]*value*jac*_gaussDos2Weight[iInteg];
-                    if (type==NEUMANN_Y) B[2*Nmap[i]+1]+= phi[i]*value*jac*_gaussDos2Weight[iInteg];
-                    if (type==NEUMANN_N)
-                    {
-                        if (nx!=0) B[2*Nmap[i]]+= phi[i]*value*jac*nx*_gaussDos2Weight[iInteg];
-                        if (ny!=0) B[2*Nmap[i]+1]+= phi[i]*value*jac*ny*_gaussDos2Weight[iInteg];
-                    }
-                    if (type==NEUMANN_T)
-                    {
-                        if (ny!=0) B[2*Nmap[i]]+= phi[i]*value*jac*ny*_gaussDos2Weight[iInteg];
-                        if (nx!=0) B[2*Nmap[i]+1]-= phi[i]*value*jac*nx*_gaussDos2Weight[iInteg];
-                    }
-                }
-
-            }
+            femSystemConstrainNEUMANN(theProblem, theSystem, iEdge, value, type,theProblem->planarStrainStress);
         }
     }
     int *theConstrainedNodes = theProblem->constrainedNodes;     
@@ -190,6 +174,12 @@ double *femElasticitySolve(femProblem *theProblem)
             femFullSystemConstrain(theSystem,i,value,theProblem->conditions[theConstrainedNodes[i]]->type); 
            }
     }
+    // printf("\n=====================================\n");
+    // printf("    Constrained number_3 : \n");
+    // for (size_t i = 0; i < theSystem->size; i++)
+    // {
+    //     printf(" B : %f \t ", B[i]);
+    // }
     double *sol ;
     double **L ;
     switch (theProblem->system->type)
@@ -205,6 +195,7 @@ double *femElasticitySolve(femProblem *theProblem)
         Error("Unexpected solver option");
         break;
     }   
+    printf("enfin ta reussis \n") ;
     return sol; 
 }
 double *theGlobalCoord;

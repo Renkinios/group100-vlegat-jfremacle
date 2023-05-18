@@ -38,38 +38,33 @@ int main(void)
     geoMeshImport();
     geoSetDomainName(0,"Contre poid gauche");
     geoSetDomainName(1,"Contre poid haut");
-
     geoSetDomainName(3,"Saut");
     geoSetDomainName(7,"Contre poid bas");
     geoSetDomainName(6,"Contre poid droit");
 //
 //  -2- Creation probleme 
 //
-    double E   = 211.e9;
-    double nu  = 0.3;
-    double rho = 7.85e3; 
+    double E   = 2.e9;
+    double nu  = 0.37;
+    double rho = 1.22e3; 
     double g   = 9.81;
-    double m = 7000; 
+    double m = -700; 
     femProblem* theProblem = femElasticityCreate(theGeometry,E,nu,rho,g,PLANAR_STRESS,FEM_FULL,FEM_NO);
-    // femElasticityAddBoundaryCondition(theProblem,"Symmetry",DIRICHLET_X,0); 
-    // femElasticityAddBoundaryCondition(theProblem,"Bottom",DIRICHLET_Y,0);
-    // femElasticityAddBoundaryCondition(theProblem,"Top",NEUMANN_T,300);    
-    femElasticityAddBoundaryCondition(theProblem,"Contre poid gauche",DIRICHLET_X,0.0);
-    // femElasticityAddBoundaryCondition(theProblem,"Contre poid droit",DIRICHLET_X,0.0);
-    femElasticityAddBoundaryCondition(theProblem,"Saut",NEUMANN_T, 9.81 * m ) ;    
-    femElasticityAddBoundaryCondition(theProblem,"Contre poid bas",DIRICHLET_Y, 0 ) ;
-
-    // femElasticityPrint(theProblem);
+    femElasticityAddBoundaryCondition(theProblem,"Contre poid droit",DIRICHLET_X,0.0) ; 
+    femElasticityAddBoundaryCondition(theProblem,"Saut",NEUMANN_T, 9.81 * m ) ;     
+    femElasticityAddBoundaryCondition(theProblem,"Contre poid bas",DIRICHLET_Y, 0.0 ) ;
     clock_t tic = clock();
-    double *theSoluce = femElasticitySolve(theProblem); 
+    double *theSoluce = femElasticitySolve(theProblem) ; 
     printf("    CPU time : %.2f [sec] \n", (clock() - tic) * 1.0 /CLOCKS_PER_SEC);
-
+    
    
-//
+//  
 //  -3- Deformation du maillage pour le plot final
 //      Creation du champ de la norme du deplacement
 //
     
+
+
     femNodes *theNodes = theGeometry->theNodes;
     double deformationFactor = 1e2;
     double *normDisplacement = malloc(theNodes->nNodes * sizeof(double));

@@ -474,10 +474,6 @@ void  femFullSystemConstrain(femFullSystem *mySystem, int myNode, double myValue
         B[myNode] = myValue;
         break;
     
-    // case (NEUMANN_X || NEUMANN_Y) : 
-    //     printf("ok") ; 
-    //     break;
-    // 
     }
 }
 
@@ -555,13 +551,20 @@ void femElasticityAddBoundaryCondition(femProblem *theProblem, char *nameDomain,
     
     int shift;
     if (type == DIRICHLET_X )  shift = 0;      
-    if (type == DIRICHLET_Y ) shift = 1;  
+    if (type == DIRICHLET_Y ) shift = 1;    
     int *elem = theBoundary->domain->elem;
     int nElem = theBoundary->domain->nElem;
+
+    printf("nElem %d \n",nElem);
     for (int e=0; e<nElem; e++) {
         for (int i=0; i<2; i++) {
             int node = theBoundary->domain->mesh->elem[2*elem[e]+i];
-            theProblem->constrainedNodes[2*node+shift] = size-1; }}    
+            theProblem->constrainedNodes[2*node+shift] = size-1; 
+        }
+        if ((type == NEUMANN_X)|| (type == NEUMANN_Y)||(type == NEUMANN_N)|| (type == NEUMANN_T))
+            theProblem ->contrainteEdges[elem[e]] =  size-1 ; 
+    }
+
 }
 
 void femElasticityPrint(femProblem *theProblem)  
@@ -585,7 +588,7 @@ void femElasticityPrint(femProblem *theProblem)
           printf("  %20s :",theCondition->domain->name);
           if (theCondition->type==DIRICHLET_X)  printf(" imposing %9.2e as the horizontal displacement  \n",value);
           if (theCondition->type==DIRICHLET_Y)  printf(" imposing %9.2e as the vertical displacement  \n",value); }
-    printf(" ======================================================================================= \n\n");
+    printf(" ====================================================================================== \n\n");
 }
 
 
@@ -632,9 +635,8 @@ femProblem* femElasticityRead(femGeo* theGeometry, const char *filename, femSolv
     for (int i=0; i < size; i++) 
         theProblem->constrainedNodes[i] = -1;
     for (int i=0; i < nbr_Edges; i++) 
-    
          theProblem->contrainteEdges[i] = -1;
-    
+
     theProblem->geometry = theGeometry;  
     if (theGeometry->theElements->nLocalNode == 3) {
         theProblem->space    = femDiscreteCreate(3,FEM_TRIANGLE);
@@ -643,8 +645,6 @@ femProblem* femElasticityRead(femGeo* theGeometry, const char *filename, femSolv
         theProblem->space    = femDiscreteCreate(4,FEM_QUAD);
         theProblem->rule     = femIntegrationCreate(4,FEM_QUAD); }
     theProblem->system   = femFullSystemCreate(size,type); 
-
-
     char theLine[MAXNAME];
     char theDomain[MAXNAME];
     char theArgument[MAXNAME];
@@ -678,7 +678,13 @@ femProblem* femElasticityRead(femGeo* theGeometry, const char *filename, femSolv
             if (strncasecmp(theArgument,"Neumann-X",19) == 0)
                 typeCondition = NEUMANN_X;
             if (strncasecmp(theArgument,"Neumann-Y",19) == 0)
-                typeCondition = NEUMANN_Y;                
+                typeCondition = NEUMANN_Y;
+            if (strncasecmp(theArgument,"Neumann-T",19) == 0){
+                typeCondition = NEUMANN_T;
+            }
+
+            if (strncasecmp(theArgument,"Neumann-N",19) == 0)
+                typeCondition = NEUMANN_N;
             femElasticityAddBoundaryCondition(theProblem,theDomain,typeCondition,value); }
         ErrorScan(fscanf(file,"\r\n")); }
  
@@ -793,4 +799,95 @@ void  getEdge(femProblem *problem,int iEdge,double *jac,double *nx,double *ny,in
     *jac=len/2;
     //printf("xL %f xR %f yL %f yR %f\n",x[0],x[1],y[0],y[1]);
     //printf("dx %f dy %f len %f\n",dx,dy,len); 
+}
+void femSystemConstrainNEUMANN(femProblem *theProblem,femFullSystem *mySystem, 
+                             int iEdge, double value,femBoundaryType type,femElasticCase iCase){
+    
+    double jac,nx,ny,x[2],y[2],dx,dy,len,r;
+    double  **A, *B;
+    int     i, size,Nmap[2];
+    A    = mySystem->A ; 
+    B    = mySystem->B ; 
+    // femFullSystemPrint(mySystem);
+    int nodeL= theProblem->geometry->theEdges->elem[iEdge*2];
+    int nodeR= theProblem->geometry->theEdges->elem[iEdge*2+1];
+    double *X=theProblem->geometry->theNodes->X;
+    double *Y=theProblem->geometry->theNodes->Y;
+    for (size_t i = 0; i < theProblem->geometry->theNodes->nNodes; i++)
+    {
+        // printf("X[%d] = %f, Y[%d] = %f\n",i,X[i],i,Y[i]); 
+    }
+    x[0]=X[nodeL];
+    x[1]=X[nodeR];
+    y[0]=Y[nodeL];
+    y[1]=Y[nodeR];
+    printf("x[0], x[1], y[0], y[1] %f %f %f %f\n",x[0],x[1],y[0],y[1]);  
+    dx=x[1]-x[0];
+    dy=y[1]-y[0];
+    len=sqrt(dx*dx+dy*dy);
+    nx=dy/(len);
+    ny=-dx/(len);
+    jac=len/2;
+    int*renumber = theProblem->geometry->theNodes->number;
+    Nmap[0]=renumber[nodeL];
+    Nmap[1]=renumber[nodeR];
+    // printf(" ici : %d \n", value*jac*ny);
+    // printf("%f \n",value);
+    printf("Nmap[0], Nmap[1] %d %d\n",Nmap[0],Nmap[1]);
+
+    if(iCase == AXISYM){
+        for (int iInteg=0;iInteg<2;iInteg++)
+        {
+            double phi[2] = {(1. - _gaussDos2Eta[iInteg]) / 2., (1. + _gaussDos2Eta[iInteg]) / 2.};
+            for (size_t i = 0; i < 2; i++)
+            {
+                r += phi[i] * x[i];
+            }
+            
+            for(int i=0;i< 2;i++)
+            {
+                if (type==NEUMANN_X) 
+                    B[2*Nmap[i]]+= phi[i]*value*jac*_gaussDos2Weight[iInteg] *r;
+                if (type==NEUMANN_Y) 
+                    B[2*Nmap[i]+1]+= phi[i]*value*jac*_gaussDos2Weight[iInteg]*r;
+                if (type==NEUMANN_N)
+                {
+                    B[2*Nmap[i]]+= phi[i]*value*jac*nx*_gaussDos2Weight[iInteg]*r;
+                    B[2*Nmap[i]+1]+= phi[i]*value*jac*ny*_gaussDos2Weight[iInteg]*r;
+                }
+                if (type==NEUMANN_T)
+                {
+
+                    B[2*Nmap[i]]+= phi[i]*value*jac*ny*_gaussDos2Weight[iInteg]*r;
+                    B[2*Nmap[i]+1] -= phi[i]*value*jac*nx*_gaussDos2Weight[iInteg]*r;
+                    
+                }
+            }
+        }
+    }
+    else{
+        for (int i=0;i<2;i++)
+        {
+            if (type==NEUMANN_X) 
+                B[2*Nmap[i]]+= value*jac;
+            if (type==NEUMANN_Y) 
+                B[2*Nmap[i]+1]+= value*jac;
+            if (type==NEUMANN_N)
+            {
+                B[2*Nmap[i]] += value*jac*nx;
+                B[2*Nmap[i]+1] += value*jac*ny;
+            }
+            if (type==NEUMANN_T)
+            {   
+                // printf(" debut %f \n", B[2*Nmap[i]+1]);
+                printf("%f %f %f\n",value,jac,ny);
+                printf("value : %f\n",value*jac*ny) ;
+                B[2*Nmap[i]] += value*jac*ny;
+                B[2*Nmap[i]+1] -= value*jac*nx;
+                // printf(" %d \n", 2*Nmap[i]+1); 
+
+
+            }
+        }
+    }
 }

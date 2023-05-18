@@ -18,6 +18,7 @@
         "memory": "c",
         "new": "c",
         "ranges": "c",
-        "glfem.h": "c"
+        "glfem.h": "c",
+        "chrono": "c"
     }
 }

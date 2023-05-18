@@ -94,66 +94,16 @@ void geoMeshGenerate() {
     return;
 }
 
-double **choleskyDecomposition(double **A, int n) {
-    int i, j, k;
-    double **L = malloc(n * sizeof(double *));
-    for (i = 0; i < n; i++) {
-        L[i] = malloc(n * sizeof(double));
-    }
-    L[0][0] = sqrt(A[0][0]);
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < (i + 1); j++) {
-            double sum = 0.0;
-
-            if (i == j) {
-                for (k = 0; k < j; k++) {
-                    sum += pow(L[j][k], 2);
-                }
-                L[j][j] = sqrt(A[j][j] - sum);
-            } else {
-                for (k = 0; k < j; k++) {
-                    sum += L[i][k] * L[j][k];
-                }
-                L[i][j] = (A[i][j] - sum) / L[j][j];
-            }
-        }
-    }
-    return L;
-}
-double *solvecholesky(double **L, double *b, int n) {
-    int i, j;
-    double y[n];
-    double *x = malloc(n * sizeof(double));
-    y[0] = b[0] / L[0][0];
-    for (i = 1; i < n; i++) {
-        double sum = 0.0;
-        for (j = 0; j < i; j++) {
-            sum += L[i][j] * y[j];
-        }
-        y[i] = (b[i] - sum) / L[i][i];
-    }
-    x[n - 1] = y[n - 1] / L[n - 1][n - 1];
-    for (i = n - 2; i >= 0; i--) {
-        double sum = 0.0;
-        for (j = i + 1; j < n; j++) {
-            sum += L[j][i] * x[j];
-        }
-        x[i] = (y[i] - sum) / L[i][i];
-    }
-    return x;
-}
-
 double *femElasticitySolve(femProblem *theProblem)
 {
-
-    femFullSystem  *theSystem = theProblem->system;
+    femFullSystem  *theSystem = (femFullSystem  *)theProblem->solver->solver;
     femIntegration *theRule = theProblem->rule;
     femDiscrete    *theSpace = theProblem->space;
     femGeo         *theGeometry = theProblem->geometry;
     femNodes       *theNodes = theGeometry->theNodes;
-    femMesh        *theMesh = theGeometry->theElements;
     femMesh        *theEdges = theGeometry->theEdges;
-    
+    femMesh        *theMesh = theGeometry->theElements;
+    int            *renumber = theGeometry->theNodes->number;
     
     double x[4],y[4],phi[4],dphidxsi[4],dphideta[4],dphidx[4],dphidy[4],r;
     int iElem,iInteg,iEdge,i,j,d,map[4],mapX[4],mapY[4];
@@ -167,8 +117,12 @@ double *femElasticitySolve(femProblem *theProblem)
     double g   = theProblem->g;
     double **A = theSystem->A;
     double *B  = theSystem->B;
-    
-    
+    // printf("\n=====================================\n");
+    // printf("    Constrained number_1 : \n");
+    // for (size_t i = 0; i < theSystem->size; i++)
+    // {
+    //     printf(" B : %f \t ", B[i]);
+    // }
     for (iElem = 0; iElem < theMesh->nElem; iElem++) {
         for (j=0; j < nLocal; j++) {
             map[j]  = theMesh->elem[iElem*nLocal+j];
@@ -179,11 +133,13 @@ double *femElasticitySolve(femProblem *theProblem)
         
         for (iInteg=0; iInteg < theRule->n; iInteg++) {    
             double xsi    = theRule->xsi[iInteg];
+            // printf("xsi = %f\n",xsi) ;  
             double eta    = theRule->eta[iInteg];
             double weight = theRule->weight[iInteg];  
             femDiscretePhi2(theSpace,xsi,eta,phi);
             femDiscreteDphi2(theSpace,xsi,eta,dphidxsi,dphideta);
-            
+            // femDiscretePrint(theSpace);  
+            // printf("phi = %f\n",phi[0]) ;
             double dxdxsi = 0.0;
             double dxdeta = 0.0;
             double dydxsi = 0.0; 
@@ -193,7 +149,7 @@ double *femElasticitySolve(femProblem *theProblem)
                 dxdeta += x[i]*dphideta[i];   
                 dydxsi += y[i]*dphidxsi[i];   
                 dydeta += y[i]*dphideta[i]; 
-                r += x[i]*phi[i];
+                r      += x[i]*phi[i];
             }
             double jac = fabs(dxdxsi * dydeta - dxdeta * dydxsi);
             
@@ -241,154 +197,50 @@ double *femElasticitySolve(femProblem *theProblem)
         }
     }  
     int *theConstrainedEdges = theProblem->contrainteEdges; 
+        // printf("\n=====================================\n");
+        // printf("    Constrained number_2 : \n");
+        // for (size_t i = 0; i < theSystem->size; i++)
+        // {
+        //     printf(" B : %f \t", B[i]);
+        // }
+    
     for  (int iEdge=0; iEdge < theEdges->nElem; iEdge++)
     {
         
         if (theConstrainedEdges[iEdge] != -1) {
-
+            // printf("iEdges : %d  \n", iEdge);  
             double value = theProblem->conditions[theConstrainedEdges[iEdge]]->value;
             int type = theProblem->conditions[theConstrainedEdges[iEdge]]->type;
-            double jac,nx,ny;
-            for (int iInteg=0;iInteg<2;iInteg++)
-            {
-                // printf("okok \n") ; 
-
-                double phi[2] = {(1. - _gaussDos2Eta[iInteg]) / 2., (1. + _gaussDos2Eta[iInteg]) / 2.};
-                int Nmap[2]; 
-                getEdge(theProblem,iEdge,&jac,&nx,&ny,Nmap); 
-                for(int i=0;i<2;i++)
-                {
-                    // printf("okok \n") ;  
-                    if (type==NEUMANN_X) B[2*Nmap[i]]+= phi[i]*value*jac*_gaussDos2Weight[iInteg];
-                    if (type==NEUMANN_Y) B[2*Nmap[i]+1]+= phi[i]*value*jac*_gaussDos2Weight[iInteg];
-                    if (type==NEUMANN_N)
-                    {
-                        if (nx!=0) B[2*Nmap[i]]+= phi[i]*value*jac*nx*_gaussDos2Weight[iInteg];
-                        if (ny!=0) B[2*Nmap[i]+1]+= phi[i]*value*jac*ny*_gaussDos2Weight[iInteg];
-                    }
-                    if (type==NEUMANN_T)
-                    {
-                        if (ny!=0) B[2*Nmap[i]]+= phi[i]*value*jac*ny*_gaussDos2Weight[iInteg];
-                        if (nx!=0) B[2*Nmap[i]+1]-= phi[i]*value*jac*nx*_gaussDos2Weight[iInteg];
-                    }
-                }
-            }
+            femSystemConstrainNEUMANN(theProblem, theSystem, iEdge, value, type,theProblem->planarStrainStress);
         }
     }
-    //     for(i = 0; i < theProblem->nBoundaryConditions; i++){
-    //     femBoundaryCondition *theCondition = theProblem->conditions[i];
-    //     if((theCondition->type == NEUMANN_N)||(theCondition->type == NEUMANN_T)||(theCondition->type == NEUMANN_X)||(theCondition->type == NEUMANN_Y)){
-    //         double val = theCondition->value;
-    //         femDomain *Dom = theCondition->domain;
-    //         for(j = 0; j < theEdges->nElem; j++){
-
-    //             for(int k = 0; k < 2; k++){
-    //                 double phi[2] = {(1.0 - _gaussDos2Eta[k])/2,(1 - _gaussDos2Eta[k])/2};
-    //                 int nodeL= theProblem->geometry->theEdges->elem[j*2];
-    //                 printf("nodeL = %d\n", nodeL);
-    //                 int nodeR= theProblem->geometry->theEdges->elem[j*2+1];
-    //                 printf("nodeR = %d\n", nodeR);
-    //                 double *X=theProblem->geometry->theNodes->X;
-    //                 double *Y=theProblem->geometry->theNodes->Y;
-    //                 double X1=X[nodeL];
-    //                 double X2=X[nodeR];
-    //                 double Y1=Y[nodeL];
-    //                 double Y2=Y[nodeR];
-    //                 printf(" X2 = %lf , Y2 = %lf",X2,Y2) ;  
-    //                 printf(" X1 = %lf , Y1 = %lf",X1,Y1) ;
-    //                 double length = sqrt((X1 - X2)*(X1 - X2) + (Y1-Y2)*(Y1-Y2));
-    //                 double jac = length/2;
-    //                 if(theCondition->type == NEUMANN_T){
-    //                     double g[2] = {val*(X2 - X1)/length, val*(Y2 - Y1)/length}; // Calcul du vecteur tangent
-    //                     B[2*(2*(Dom->elem[j]))] += jac*g[0] *phi[k];
-    //                     B[2*(2*(Dom->elem[j])) + 1] += jac*g[1] *phi[k];
-    //                     B[2*(2*(Dom->elem[j]) + 1)] += jac*g[0]* phi[k];
-    //                     B[2*(2*(Dom->elem[j]) + 1) + 1] += jac*g[1] *phi[k];
-    //                 }
-    //                 if(theCondition->type == NEUMANN_N){
-    //                     double g[2] = {val*(Y1 - Y2)/length, val*(X2 - X1)/length}; // Calcul du vecteur normal
-    //                     B[2*(2*(Dom->elem[j]))] += jac*g[0] *phi[k];
-    //                     B[2*(2*(Dom->elem[j])) + 1] += jac*g[1]*phi[k];
-    //                     B[2*(2*(Dom->elem[j]) + 1)] += jac*g[0] *phi[k];
-    //                     B[2*(2*(Dom->elem[j]) + 1) + 1] += jac*g[1]*phi[k];
-    //                 }
-    //                 if(theCondition->type == NEUMANN_X){
-    //                     B[2*(2*(Dom->elem[j]))] += jac*val*phi[k];
-    //                     B[2*(2*(Dom->elem[j]) + 1)] += jac*val*phi[k];
-    //                 }
-    //                 if(theCondition->type == NEUMANN_Y){
-    //                     B[2*(2*(Dom->elem[j])) + 1] += jac*val*phi[k];
-    //                     B[2*(2*(Dom->elem[j]) + 1) + 1] += jac*val*phi[k];
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
     int *theConstrainedNodes = theProblem->constrainedNodes;     
     for (int i=0; i < theSystem->size; i++) {
         if (theConstrainedNodes[i] != -1) {
             double value = theProblem->conditions[theConstrainedNodes[i]]->value;
-            femFullSystemConstrain(theSystem,i,value,theProblem->conditions[theConstrainedNodes[i]]->type); 
-           }
+            femSystemConstrainDIRICHLETXY(theSystem,i,value,theProblem->conditions[theConstrainedNodes[i]]->type); 
+        }
     }
+        printf("\n=====================================\n");
+        printf("    Constrained number_3     : \n");
+        for (size_t i = 0; i < theSystem->size; i++)
+        {
+            printf(" B : %f \t", B[i]);
+        }
     double *sol ;
     double **L ;
-    switch (theProblem->system->type)
-    {
-    case FEM_Cholesky:
-        L  = choleskyDecomposition(A,theSystem->size);  
-        sol = solvecholesky(L,theSystem->B,theSystem->size) ;
-        break;
-    case FEM_FULL : 
+    // switch (theSolver->type)
+    // {
+    // case FEM_Cholesky:
+    //     L  = choleskyDecomposition(A,theSystem->size);  
+    //     sol = solvecholesky(L,theSystem->B,theSystem->size) ;
+    //     break;
+    // case FEM_FULL : 
         sol = femFullSystemEliminate(theSystem);
-        break;
-    default:
-        Error("Unexpected solver option");
-        break;
-    }   
+        // break;
+    // default:
+    //     Error("Unexpected solver option");
+    //     break;
+    // }   
     return sol; 
-}
-
-double *theGlobalCoord;
-
-int compare(const void *nodeOne, const void *nodeTwo) 
-{
-    int *iOne = (int *)nodeOne;
-    int *iTwo = (int *)nodeTwo;
-    double diff = theGlobalCoord[*iOne] - theGlobalCoord[*iTwo];
-    if (diff < 0)    return  1;
-    if (diff > 0)    return -1;
-    return  0;  
-}
-
-void femMeshRenumber(femMesh *theMesh, femRenumType renumType)
-{
-    int i, *inverse;
-    
-    switch (renumType) {
-        case FEM_NO :
-            for (i = 0; i < theMesh->nodes->nNodes; i++) 
-                theMesh->nodes->number[i] = i;
-            break;
-        case FEM_XNUM : 
-            inverse = malloc(sizeof(int)*theMesh->nodes->nNodes);
-            for (i = 0; i < theMesh->nodes->nNodes; i++) 
-                inverse[i] = i; 
-            theGlobalCoord = theMesh->nodes->X;
-            qsort(inverse, theMesh->nodes->nNodes, sizeof(int), compare);
-            for (i = 0; i < theMesh->nodes->nNodes; i++)
-                theMesh->nodes->number[inverse[i]] = i;
-            free(inverse);  
-            break;
-        case FEM_YNUM : 
-            inverse = malloc(sizeof(int)*theMesh->nodes->nNodes);
-            for (i = 0; i < theMesh->nodes->nNodes; i++) 
-                inverse[i] = i; 
-            theGlobalCoord = theMesh->nodes->Y;
-            qsort(inverse, theMesh->nodes->nNodes, sizeof(int), compare);
-            for (i = 0; i < theMesh->nodes->nNodes; i++)
-                theMesh->nodes->number[inverse[i]] = i;
-            free(inverse);  
-            break;
-        default : Error("Unexpected renumbering option"); }
 }

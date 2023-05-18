@@ -54,14 +54,14 @@ int main(void)
     double nu  = 0.37;
     double rho = 1.22e3; 
     double g   = 9.81;
-    double m = 70 ; 
+    double m = -700 ; 
     femProblem* theProblem = femElasticityCreate(theGeometry,E,nu,rho,g,PLANAR_STRAIN);
 
     femElasticityAddBoundaryCondition(theProblem,"Contre poid gauche",DIRICHLET_X,0.0);
-    femElasticityAddBoundaryCondition(theProblem,"Contre poid droit",DIRICHLET_X,0.0);
+    // femElasticityAddBoundaryCondition(theProblem,"Contre poid droit",DIRICHLET_X,0.0);
     femElasticityAddBoundaryCondition(theProblem,"Saut",NEUMANN_N, 9.81 * m );
     femElasticityAddBoundaryCondition(theProblem,"Contre poid bas",DIRICHLET_Y, 0 );
-    femElasticityAddBoundaryCondition(theProblem,"Contre poid haut",DIRICHLET_Y, 0 );
+    // femElasticityAddBoundaryCondition(theProblem,"Contre poid haut",DIRICHLET_Y, 0 );
     femElasticityPrint(theProblem);
     femElasticityWrite(theProblem,"../data/problem.txt");
  
