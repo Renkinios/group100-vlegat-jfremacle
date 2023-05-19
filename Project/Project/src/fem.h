@@ -31,7 +31,7 @@ typedef enum {DIRICHLET_X,DIRICHLET_Y,DIRICHLET_N,DIRICHLET_T,
 
 typedef enum {PLANAR_STRESS,PLANAR_STRAIN,AXISYM} femElasticCase;
 
-typedef enum {FEM_FULL,FEM_BAND,FEM_ITER,FEM_Cholesky} femSolverType;
+typedef enum {FEM_FULL,FEM_Cholesky} femSolverType;
 
 typedef enum {FEM_NO,FEM_XNUM,FEM_YNUM} femRenumType;
 

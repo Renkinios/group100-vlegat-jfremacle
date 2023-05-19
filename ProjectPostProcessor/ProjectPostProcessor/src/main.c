@@ -42,15 +42,17 @@ int main(void)
 //
     
     femNodes *theNodes = theGeometry->theNodes;
-    double deformationFactor = 1e1;
+    double deformationFactor = 1;
     double *normDisplacement = malloc(theNodes->nNodes * sizeof(double));
-    
     for (int i=0; i<n; i++){
         theNodes->X[i] += theSoluce[2*i+0]*deformationFactor;
         theNodes->Y[i] += theSoluce[2*i+1]*deformationFactor;
         normDisplacement[i] = sqrt(theSoluce[2*i+0]*theSoluce[2*i+0] + 
                                    theSoluce[2*i+1]*theSoluce[2*i+1]); }
-  
+    for (int i=0; i<n; i++){
+        if(theNodes->Y[i] >1.06 && theNodes->X[i] > 1.6)
+        printf(" Y[i] , X[i]: %f, %f \n",theNodes->Y[i],theNodes->X[i]);
+    }
     double hMin = femMin(normDisplacement,n);  
     double hMax = femMax(normDisplacement,n);  
     printf(" ==== Minimum displacement          : %14.7e \n",hMin);

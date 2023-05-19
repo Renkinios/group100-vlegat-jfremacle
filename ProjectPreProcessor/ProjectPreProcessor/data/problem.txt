@@ -3,6 +3,3 @@ Young modulus      :  2.0000000e+09
 Poisson ratio      :  3.7000000e-01  
 Mass density       :  1.2200000e+03  
 Gravity            :  9.8100000e+00  
-Boundary condition :  Dirichlet-X        =  0.0000000e+00 : Contre poid gauche
-Boundary condition :  Undefined          = -6.8670000e+03 : Saut
-Boundary condition :  Dirichlet-Y        =  0.0000000e+00 : Contre poid bas

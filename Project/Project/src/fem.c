@@ -23,6 +23,7 @@ void geoFree()
     if (theGeometry.theNodes) {
         free(theGeometry.theNodes->X);
         free(theGeometry.theNodes->Y);
+        free(theGeometry.theNodes->number);
         free(theGeometry.theNodes); }
     if (theGeometry.theElements) {
         free(theGeometry.theElements->elem);
@@ -453,27 +454,21 @@ double* femFullSystemEliminate(femFullSystem *mySystem)
 }
 
 void  femFullSystemConstrain(femFullSystem *mySystem, int myNode, double myValue,femBoundaryType myType) 
-{
+{ 
     double  **A, *B;
     int     i, size;
-    
-    A    = mySystem->A;
-    B    = mySystem->B;
+    A    = mySystem->A ; 
+    B    = mySystem->B ; 
     size = mySystem->size;
-    switch (myType)
-    {
-    case (DIRICHLET_X || DIRICHLET_Y):
-        for (i=0; i < size; i++) {
+    if(myType == DIRICHLET_X || myType == DIRICHLET_Y){
+     for (i=0; i < size; i++) {
         B[i] -= myValue * A[i][myNode];
         A[i][myNode] = 0; }
     
         for (i=0; i < size; i++) 
             A[myNode][i] = 0; 
-        
         A[myNode][myNode] = 1;
         B[myNode] = myValue;
-        break;
-    
     }
 }
 
@@ -527,6 +522,7 @@ void femElasticityFree(femProblem *theProblem)
     femDiscreteFree(theProblem->space);
     free(theProblem->conditions);
     free(theProblem->constrainedNodes);
+    free(theProblem->contrainteEdges);
     free(theProblem);
 }
     
@@ -550,21 +546,24 @@ void femElasticityAddBoundaryCondition(femProblem *theProblem, char *nameDomain,
     
     
     int shift;
-    if (type == DIRICHLET_X )  shift = 0;      
-    if (type == DIRICHLET_Y ) shift = 1;    
+    if (type == DIRICHLET_X )  
+        shift = 0;      
+    if (type == DIRICHLET_Y ) 
+        shift = 1;    
     int *elem = theBoundary->domain->elem;
     int nElem = theBoundary->domain->nElem;
 
-    printf("nElem %d \n",nElem);
+
     for (int e=0; e<nElem; e++) {
         for (int i=0; i<2; i++) {
-            int node = theBoundary->domain->mesh->elem[2*elem[e]+i];
-            theProblem->constrainedNodes[2*node+shift] = size-1; 
+            if ((type == NEUMANN_X)|| (type == NEUMANN_Y)||(type == NEUMANN_N)|| (type == NEUMANN_T))
+                theProblem ->contrainteEdges[elem[e]] =  size-1 ;
+            else{
+                int node = theBoundary->domain->mesh->elem[2*elem[e]+i];
+                theProblem->constrainedNodes[2*node+shift] = size-1; 
+            }
         }
-        if ((type == NEUMANN_X)|| (type == NEUMANN_Y)||(type == NEUMANN_N)|| (type == NEUMANN_T))
-            theProblem ->contrainteEdges[elem[e]] =  size-1 ; 
     }
-
 }
 
 void femElasticityPrint(femProblem *theProblem)  
@@ -778,50 +777,23 @@ void femWarning(char *text, int line, char *file)
     printf("\n  Warning in %s at line %d : \n  %s\n", file, line, text);
     printf("--------------------------------------------------------------------- Yek Yek !! \n\n");                                              
 }
-void  getEdge(femProblem *problem,int iEdge,double *jac,double *nx,double *ny,int *map)
-{
-    double x[2],y[2],dx,dy,len;
-
-    int nodeL= problem->geometry->theEdges->elem[iEdge*2];
-    int nodeR= problem->geometry->theEdges->elem[iEdge*2+1];
-    double *X=problem->geometry->theNodes->X;
-    double *Y=problem->geometry->theNodes->Y;
-    x[0]=X[nodeL];
-    x[1]=X[nodeR];
-    y[0]=Y[nodeL];
-    y[1]=Y[nodeR];
-    printf("X[0] = %f, Y[0] = %f, X[1] = %f, Y[1] = %f\n",X[nodeL],Y[nodeL],X[nodeR],Y[nodeR]);
-    dx=x[1]-x[0];
-    dy=y[1]-y[0];
-    len=sqrt(dx*dx+dy*dy);
-    *nx=dy/(len);
-    *ny=-dx/(len);
-    *jac=len/2;
-    //printf("xL %f xR %f yL %f yR %f\n",x[0],x[1],y[0],y[1]);
-    //printf("dx %f dy %f len %f\n",dx,dy,len); 
-}
 void femSystemConstrainNEUMANN(femProblem *theProblem,femFullSystem *mySystem, 
                              int iEdge, double value,femBoundaryType type,femElasticCase iCase){
     
     double jac,nx,ny,x[2],y[2],dx,dy,len,r;
     double  **A, *B;
-    int     i, size,Nmap[2];
+    int     i, size,map[2];
     A    = mySystem->A ; 
     B    = mySystem->B ; 
-    // femFullSystemPrint(mySystem);
     int nodeL= theProblem->geometry->theEdges->elem[iEdge*2];
     int nodeR= theProblem->geometry->theEdges->elem[iEdge*2+1];
     double *X=theProblem->geometry->theNodes->X;
     double *Y=theProblem->geometry->theNodes->Y;
-    for (size_t i = 0; i < theProblem->geometry->theNodes->nNodes; i++)
-    {
-        // printf("X[%d] = %f, Y[%d] = %f\n",i,X[i],i,Y[i]); 
-    }
+
     x[0]=X[nodeL];
     x[1]=X[nodeR];
     y[0]=Y[nodeL];
     y[1]=Y[nodeR];
-    printf("x[0], x[1], y[0], y[1] %f %f %f %f\n",x[0],x[1],y[0],y[1]);  
     dx=x[1]-x[0];
     dy=y[1]-y[0];
     len=sqrt(dx*dx+dy*dy);
@@ -829,15 +801,13 @@ void femSystemConstrainNEUMANN(femProblem *theProblem,femFullSystem *mySystem,
     ny=-dx/(len);
     jac=len/2;
     int*renumber = theProblem->geometry->theNodes->number;
-    Nmap[0]=renumber[nodeL];
-    Nmap[1]=renumber[nodeR];
-    // printf(" ici : %d \n", value*jac*ny);
-    // printf("%f \n",value);
-    printf("Nmap[0], Nmap[1] %d %d\n",Nmap[0],Nmap[1]);
+    map[0]=renumber[nodeL];
+    map[1]=renumber[nodeR];
 
     if(iCase == AXISYM){
         for (int iInteg=0;iInteg<2;iInteg++)
         {
+            r = 0 ;
             double phi[2] = {(1. - _gaussDos2Eta[iInteg]) / 2., (1. + _gaussDos2Eta[iInteg]) / 2.};
             for (size_t i = 0; i < 2; i++)
             {
@@ -847,19 +817,18 @@ void femSystemConstrainNEUMANN(femProblem *theProblem,femFullSystem *mySystem,
             for(int i=0;i< 2;i++)
             {
                 if (type==NEUMANN_X) 
-                    B[2*Nmap[i]]+= phi[i]*value*jac*_gaussDos2Weight[iInteg] *r;
+                    B[2*map[i]]+= phi[i]*value*jac*_gaussDos2Weight[iInteg] *r;
                 if (type==NEUMANN_Y) 
-                    B[2*Nmap[i]+1]+= phi[i]*value*jac*_gaussDos2Weight[iInteg]*r;
+                    B[2*map[i]+1]+= phi[i]*value*jac*_gaussDos2Weight[iInteg]*r;
                 if (type==NEUMANN_N)
                 {
-                    B[2*Nmap[i]]+= phi[i]*value*jac*nx*_gaussDos2Weight[iInteg]*r;
-                    B[2*Nmap[i]+1]+= phi[i]*value*jac*ny*_gaussDos2Weight[iInteg]*r;
+                    B[2*map[i]]+= phi[i]*value*jac*nx*_gaussDos2Weight[iInteg]*r;
+                    B[2*map[i]+1]+= phi[i]*value*jac*ny*_gaussDos2Weight[iInteg]*r;
                 }
                 if (type==NEUMANN_T)
                 {
-
-                    B[2*Nmap[i]]+= phi[i]*value*jac*ny*_gaussDos2Weight[iInteg]*r;
-                    B[2*Nmap[i]+1] -= phi[i]*value*jac*nx*_gaussDos2Weight[iInteg]*r;
+                    B[2*map[i]]+= phi[i]*value*jac*ny*_gaussDos2Weight[iInteg]*r;
+                    B[2*map[i]+1] -= phi[i]*value*jac*nx*_gaussDos2Weight[iInteg]*r;
                     
                 }
             }
@@ -869,24 +838,18 @@ void femSystemConstrainNEUMANN(femProblem *theProblem,femFullSystem *mySystem,
         for (int i=0;i<2;i++)
         {
             if (type==NEUMANN_X) 
-                B[2*Nmap[i]]+= value*jac;
+                B[2*map[i]]+= value*jac;
             if (type==NEUMANN_Y) 
-                B[2*Nmap[i]+1]+= value*jac;
+                B[2*map[i]+1]+= value*jac;
             if (type==NEUMANN_N)
             {
-                B[2*Nmap[i]] += value*jac*nx;
-                B[2*Nmap[i]+1] += value*jac*ny;
+                B[2*map[i]] += value*jac*nx;
+                B[2*map[i]+1] += value*jac*ny;
             }
             if (type==NEUMANN_T)
             {   
-                // printf(" debut %f \n", B[2*Nmap[i]+1]);
-                printf("%f %f %f\n",value,jac,ny);
-                printf("value : %f\n",value*jac*ny) ;
-                B[2*Nmap[i]] += value*jac*ny;
-                B[2*Nmap[i]+1] -= value*jac*nx;
-                // printf(" %d \n", 2*Nmap[i]+1); 
-
-
+                B[2*map[i]] += value*jac*ny;
+                B[2*map[i]+1] -= value*jac*nx;
             }
         }
     }

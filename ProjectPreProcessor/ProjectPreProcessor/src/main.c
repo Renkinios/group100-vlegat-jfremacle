@@ -29,21 +29,21 @@ int main(void)
     theGeometry->h           =  Lx * 0.05;    
     theGeometry->elementType = FEM_TRIANGLE;
   
-    // geoMeshGenerate();      // Utilisation de OpenCascade
+    geoMeshGenerate();      // Utilisation de OpenCascade
     
-    geoMeshGenerateGeo();   // Utilisation de outils de GMSH  
+    // geoMeshGenerateGeo();   // Utilisation de outils de GMSH  
                             // Attention : les entit�s sont diff�rentes !
                             // On a aussi invers� la g�omtrie pour rire !
                             
 //  geoMeshGenerateGeoFile("../data/mesh.geo");   // Lecture fichier geo
   
     geoMeshImport();
-    geoSetDomainName(0,"Contre poid gauche");
-    geoSetDomainName(1,"Contre poid haut");
+    // geoSetDomainName(0,"Contre poid gauche");
+    // geoSetDomainName(1,"Contre poid haut");
 
-    geoSetDomainName(3,"Saut");
-    geoSetDomainName(7,"Contre poid bas");
-    geoSetDomainName(6,"Contre poid droit");
+    // geoSetDomainName(3,"Saut");
+    // geoSetDomainName(7,"Contre poid bas");
+    // geoSetDomainName(6,"Contre poid droit");
     geoMeshWrite("../data/mesh.txt");
           
 //
@@ -57,10 +57,10 @@ int main(void)
     double m = -700 ; 
     femProblem* theProblem = femElasticityCreate(theGeometry,E,nu,rho,g,PLANAR_STRAIN);
 
-    femElasticityAddBoundaryCondition(theProblem,"Contre poid gauche",DIRICHLET_X,0.0);
+    // femElasticityAddBoundaryCondition(theProblem,"Contre poid gauche",DIRICHLET_X,0.0);
     // femElasticityAddBoundaryCondition(theProblem,"Contre poid droit",DIRICHLET_X,0.0);
-    femElasticityAddBoundaryCondition(theProblem,"Saut",NEUMANN_N, 9.81 * m );
-    femElasticityAddBoundaryCondition(theProblem,"Contre poid bas",DIRICHLET_Y, 0 );
+    // femElasticityAddBoundaryCondition(theProblem,"Saut",NEUMANN_N, 9.81 * m );
+    // femElasticityAddBoundaryCondition(theProblem,"Contre poid bas",DIRICHLET_Y, 0 );
     // femElasticityAddBoundaryCondition(theProblem,"Contre poid haut",DIRICHLET_Y, 0 );
     femElasticityPrint(theProblem);
     femElasticityWrite(theProblem,"../data/problem.txt");
@@ -89,7 +89,11 @@ int main(void)
     int freezingButton = FALSE;
     double t, told = 0;
     char theMessage[MAXNAME];
-   
+    int n = theGeometry->theNodes->nNodes;
+    for (int i=0; i<n; i++){
+        if(theNodes->Y[i] >1.06 && theNodes->X[i] > 1.6)
+        printf(" Y[i] , X[i]: %f, %f \n",theNodes->Y[i],theNodes->X[i]);
+    }
  
     GLFWwindow* window = glfemInit("EPL1110 : Project 2022-23 ");
     glfwMakeContextCurrent(window);

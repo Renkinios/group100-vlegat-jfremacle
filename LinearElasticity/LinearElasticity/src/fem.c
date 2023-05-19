@@ -815,8 +815,13 @@ void femSystemConstrainNEUMANN(femProblem *theProblem,femFullSystem *mySystem,
         }
     }
     else{
-        for (int i=0;i<2;i++)
+        for (int iInteg=0;iInteg<2;iInteg++)
         {
+            for (size_t i = 0; i < 2; i++)
+            {
+                double phi[2] = {(1. - _gaussDos2Eta[iInteg]) / 2., (1. + _gaussDos2Eta[iInteg]) / 2.};
+            }
+            
             if (type==NEUMANN_X) 
                 B[2*Nmap[i]]+= value*jac;
             if (type==NEUMANN_Y) 

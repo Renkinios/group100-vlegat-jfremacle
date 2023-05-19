@@ -22,4 +22,9 @@ CMakeFiles/myFem.dir/src/main.c.obj: \
  C:/TDM-GCC-64/x86_64-w64-mingw32/include/malloc.h \
  C:/TDM-GCC-64/x86_64-w64-mingw32/include/math.h \
  C:/TDM-GCC-64/x86_64-w64-mingw32/include/string.h \
- C:/TDM-GCC-64/x86_64-w64-mingw32/include/sec_api/string_s.h
+ C:/TDM-GCC-64/x86_64-w64-mingw32/include/sec_api/string_s.h \
+ C:/TDM-GCC-64/x86_64-w64-mingw32/include/time.h \
+ C:/TDM-GCC-64/x86_64-w64-mingw32/include/_timeval.h \
+ C:/TDM-GCC-64/x86_64-w64-mingw32/include/sys/timeb.h \
+ C:/TDM-GCC-64/x86_64-w64-mingw32/include/sec_api/sys/timeb_s.h \
+ C:/TDM-GCC-64/x86_64-w64-mingw32/include/pthread_time.h

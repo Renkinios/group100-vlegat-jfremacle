@@ -74,20 +74,15 @@ double *femElasticitySolve(femProblem *theProblem)
     double g   = theProblem->g;
     double **A = theSystem->A;
     double *B  = theSystem->B;
-    // printf("\n=====================================\n");
-    // printf("    Constrained number_1 : \n");
-    // for (size_t i = 0; i < theSystem->size; i++)
-    // {
-    //     printf(" B : %f \t ", B[i]);
-    // }
-    
+
     for (iElem = 0; iElem < theMesh->nElem; iElem++) {
         for (j=0; j < nLocal; j++) {
             map[j]  = theMesh->elem[iElem*nLocal+j];
             mapX[j] = 2*map[j];
             mapY[j] = 2*map[j] + 1;
             x[j]    = theNodes->X[map[j]];
-            y[j]    = theNodes->Y[map[j]];} 
+            y[j]    = theNodes->Y[map[j]];
+        } 
         
         for (iInteg=0; iInteg < theRule->n; iInteg++) {    
             double xsi    = theRule->xsi[iInteg];
@@ -100,6 +95,7 @@ double *femElasticitySolve(femProblem *theProblem)
             double dxdeta = 0.0;
             double dydxsi = 0.0; 
             double dydeta = 0.0;
+            r = 0.0;
             for (i = 0; i < theSpace->n; i++) {  
                 dxdxsi += x[i]*dphidxsi[i];       
                 dxdeta += x[i]*dphideta[i];   
@@ -137,7 +133,6 @@ double *femElasticitySolve(femProblem *theProblem)
                         A[mapY[i]][mapY[j]] += (dphidy[i] * a * r * dphidy[j] + 
                                             dphidx[i] * c * r * dphidx[j]) * jac * weight; 
                     }
-                    
                 }
             }
             for (i = 0; i < theSpace->n; i++) {
@@ -152,12 +147,7 @@ double *femElasticitySolve(femProblem *theProblem)
             }
         }
     }  
-    // printf("\n=====================================\n");
-    // printf("    Constrained number_2 : \n");
-    // for (size_t i = 0; i < theSystem->size; i++)
-    // {
-    //     printf(" B : %f \t ", B[i]);
-    // }
+
     int *theConstrainedEdges = theProblem->contrainteEdges; 
     for  (int iEdge=0; iEdge < theEdges->nElem; iEdge++)
     {
@@ -174,12 +164,6 @@ double *femElasticitySolve(femProblem *theProblem)
             femFullSystemConstrain(theSystem,i,value,theProblem->conditions[theConstrainedNodes[i]]->type); 
            }
     }
-    // printf("\n=====================================\n");
-    // printf("    Constrained number_3 : \n");
-    // for (size_t i = 0; i < theSystem->size; i++)
-    // {
-    //     printf(" B : %f \t ", B[i]);
-    // }
     double *sol ;
     double **L ;
     switch (theProblem->system->type)
@@ -195,7 +179,7 @@ double *femElasticitySolve(femProblem *theProblem)
         Error("Unexpected solver option");
         break;
     }   
-    printf("enfin ta reussis \n") ;
+
     return sol; 
 }
 double *theGlobalCoord;
