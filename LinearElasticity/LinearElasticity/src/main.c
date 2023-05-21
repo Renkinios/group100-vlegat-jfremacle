@@ -51,7 +51,7 @@ int main(void)
     double m = -700; 
     femProblem* theProblem = femElasticityCreate(theGeometry,E,nu,rho,g,PLANAR_STRESS,FEM_FULL,FEM_NO);
     femElasticityAddBoundaryCondition(theProblem,"Contre poid droit",DIRICHLET_X,0.0) ; 
-    femElasticityAddBoundaryCondition(theProblem,"Saut",NEUMANN_T, 9.81 * m ) ;     
+    femElasticityAddBoundaryCondition(theProblem,"Saut",NEUMANN_T, -3.2600000e+6) ;     
     femElasticityAddBoundaryCondition(theProblem,"Contre poid bas",DIRICHLET_Y, 0.0 ) ;
     clock_t tic = clock();
     double *theSoluce = femElasticitySolve(theProblem) ; 
@@ -66,7 +66,7 @@ int main(void)
 
 
     femNodes *theNodes = theGeometry->theNodes;
-    double deformationFactor = 1e2;
+    double deformationFactor = 1;
     double *normDisplacement = malloc(theNodes->nNodes * sizeof(double));
     
     for (int i=0; i<theNodes->nNodes; i++){
@@ -74,7 +74,12 @@ int main(void)
         theNodes->Y[i] += theSoluce[2*i+1]*deformationFactor;
         normDisplacement[i] = sqrt(theSoluce[2*i+0]*theSoluce[2*i+0] + 
                                    theSoluce[2*i+1]*theSoluce[2*i+1]); }
-  
+    int n = theGeometry->theNodes->nNodes;
+    printf("---------------------------------------------------\n") ;
+    for (int i=0; i<n; i++){
+        if(theNodes->Y[i] >0.8 && theNodes->X[i] > 0.8)
+            printf(" Y[i] , X[i]: %f, %f \n",theNodes->Y[i],theNodes->X[i]);
+    }
     // double hMin = femMin(normDisplacement,theNodes->nNodes);  
     // double hMax = femMax(normDisplacement,theNodes->nNodes);  
     // printf(" ==== Minimum displacement          : %14.7e \n",hMin);

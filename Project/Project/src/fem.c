@@ -460,7 +460,6 @@ void  femFullSystemConstrain(femFullSystem *mySystem, int myNode, double myValue
     A    = mySystem->A ; 
     B    = mySystem->B ; 
     size = mySystem->size;
-    if(myType == DIRICHLET_X || myType == DIRICHLET_Y){
      for (i=0; i < size; i++) {
         B[i] -= myValue * A[i][myNode];
         A[i][myNode] = 0; }
@@ -470,7 +469,6 @@ void  femFullSystemConstrain(femFullSystem *mySystem, int myNode, double myValue
         A[myNode][myNode] = 1;
         B[myNode] = myValue;
     }
-}
 
 
 femProblem *femElasticityCreate(femGeo* theGeometry, 
@@ -782,18 +780,19 @@ void femSystemConstrainNEUMANN(femProblem *theProblem,femFullSystem *mySystem,
     
     double jac,nx,ny,x[2],y[2],dx,dy,len,r;
     double  **A, *B;
-    int     i, size,map[2];
+    int     i, size,Nmap[2];
     A    = mySystem->A ; 
     B    = mySystem->B ; 
     int nodeL= theProblem->geometry->theEdges->elem[iEdge*2];
     int nodeR= theProblem->geometry->theEdges->elem[iEdge*2+1];
     double *X=theProblem->geometry->theNodes->X;
     double *Y=theProblem->geometry->theNodes->Y;
-
     x[0]=X[nodeL];
     x[1]=X[nodeR];
     y[0]=Y[nodeL];
     y[1]=Y[nodeR];
+    // printf("x[0], x[1], y[0], y[1] %f %f %f %f\n",x[0],x[1],y[0],y[1]);  
+
     dx=x[1]-x[0];
     dy=y[1]-y[0];
     len=sqrt(dx*dx+dy*dy);
@@ -801,35 +800,35 @@ void femSystemConstrainNEUMANN(femProblem *theProblem,femFullSystem *mySystem,
     ny=-dx/(len);
     jac=len/2;
     int*renumber = theProblem->geometry->theNodes->number;
-    map[0]=renumber[nodeL];
-    map[1]=renumber[nodeR];
-
+    Nmap[0]=renumber[nodeL];
+    Nmap[1]=renumber[nodeR];
+    printf("Nmap[0], Nmap[1] %d %d\n",Nmap[0],Nmap[1]);
+    printf("value*jac*ny : %f\n",value*jac*ny);
     if(iCase == AXISYM){
         for (int iInteg=0;iInteg<2;iInteg++)
         {
-            r = 0 ;
             double phi[2] = {(1. - _gaussDos2Eta[iInteg]) / 2., (1. + _gaussDos2Eta[iInteg]) / 2.};
+            double r = 0 ;
             for (size_t i = 0; i < 2; i++)
             {
                 r += phi[i] * x[i];
             }
             
-            for(int i=0;i< 2;i++)
+            for(int i=0;i<2;i++)
             {
                 if (type==NEUMANN_X) 
-                    B[2*map[i]]+= phi[i]*value*jac*_gaussDos2Weight[iInteg] *r;
+                    B[2*Nmap[i]]+= phi[i]*value*jac*_gaussDos2Weight[iInteg] *r;
                 if (type==NEUMANN_Y) 
-                    B[2*map[i]+1]+= phi[i]*value*jac*_gaussDos2Weight[iInteg]*r;
+                    B[2*Nmap[i]+1]+= phi[i]*value*jac*_gaussDos2Weight[iInteg]*r;
                 if (type==NEUMANN_N)
                 {
-                    B[2*map[i]]+= phi[i]*value*jac*nx*_gaussDos2Weight[iInteg]*r;
-                    B[2*map[i]+1]+= phi[i]*value*jac*ny*_gaussDos2Weight[iInteg]*r;
+                    B[2*Nmap[i]]+= phi[i]*value*jac*nx*_gaussDos2Weight[iInteg]*r;
+                    B[2*Nmap[i]+1]+= phi[i]*value*jac*ny*_gaussDos2Weight[iInteg]*r;
                 }
                 if (type==NEUMANN_T)
                 {
-                    B[2*map[i]]+= phi[i]*value*jac*ny*_gaussDos2Weight[iInteg]*r;
-                    B[2*map[i]+1] -= phi[i]*value*jac*nx*_gaussDos2Weight[iInteg]*r;
-                    
+                    B[2*Nmap[i]]+= phi[i]*value*jac*ny*_gaussDos2Weight[iInteg]*r;
+                    B[2*Nmap[i]+1]-= phi[i]*value*jac*nx*_gaussDos2Weight[iInteg]*r;
                 }
             }
         }
@@ -838,18 +837,19 @@ void femSystemConstrainNEUMANN(femProblem *theProblem,femFullSystem *mySystem,
         for (int i=0;i<2;i++)
         {
             if (type==NEUMANN_X) 
-                B[2*map[i]]+= value*jac;
+                B[2*Nmap[i]]+= value*jac;
             if (type==NEUMANN_Y) 
-                B[2*map[i]+1]+= value*jac;
+                B[2*Nmap[i]+1]+= value*jac;
             if (type==NEUMANN_N)
             {
-                B[2*map[i]] += value*jac*nx;
-                B[2*map[i]+1] += value*jac*ny;
+                B[2*Nmap[i]]+= value*jac*nx;
+                B[2*Nmap[i]+1]+= value*jac*ny;
             }
             if (type==NEUMANN_T)
-            {   
-                B[2*map[i]] += value*jac*ny;
-                B[2*map[i]+1] -= value*jac*nx;
+            {
+
+                B[2*Nmap[i]]+= value*jac*ny ;
+                B[2*Nmap[i]+1]-= value*jac*nx;
             }
         }
     }

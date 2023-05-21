@@ -221,12 +221,6 @@ double *femElasticitySolve(femProblem *theProblem)
             femSystemConstrainDIRICHLETXY(theSystem,i,value,theProblem->conditions[theConstrainedNodes[i]]->type); 
         }
     }
-        printf("\n=====================================\n");
-        printf("    Constrained number_3     : \n");
-        for (size_t i = 0; i < theSystem->size; i++)
-        {
-            printf(" B : %f \t", B[i]);
-        }
     double *sol ;
     double **L ;
     // switch (theSolver->type)
